@@ -2,7 +2,6 @@ import reflex as rx
 from reflex_echarts import echarts
 from typing import TypedDict, Literal
 from datetime import datetime, timedelta
-from app.states.lists import ListsState
 
 
 # Time series data point structure

@@ -1,6 +1,8 @@
 import reflex as rx
 import random
-from app.states.lists import ListsState, ListConfig, TimeSeries, ListAttribute
+from app.states.collections import CollectionsState, ListConfig, ListAttribute
+from app.states.entities import EntitiesState, TimeSeries
+from app.states.workspace import WorkspaceState
 from app.components.list_header import list_header
 from app.components.emoji_picker import emoji_picker
 from app.components.timeseries_card import timeseries_card, TimeSeriesCardData, TimeSeriesDataPoint
@@ -90,14 +92,15 @@ def generate_timeseries_card_data(name: str, capacity_mw: float) -> TimeSeriesCa
 
 def timeseries_card_grid_view(items: list[TimeSeriesCardData]) -> rx.Component:
     """Grid view showing time series cards in a 1 or 2 column layout."""
-    from app.states.lists import ListsState
+    from app.states.collections import CollectionsState
+    from app.states.workspace import WorkspaceState
     return rx.el.div(
         rx.foreach(
             items,
             lambda card: timeseries_card(card),
         ),
         class_name=rx.cond(
-            ListsState.timeseries_card_columns == 1,
+            CollectionsState.timeseries_card_columns == 1,
             "grid grid-cols-1 gap-6",
             "grid grid-cols-2 gap-6",
         ),
@@ -128,7 +131,7 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
         rx.el.input(
             type="hidden",
             id="column-resize-input-object",
-            on_change=ListsState.set_column_width,
+            on_change=CollectionsState.set_column_width,
         ),
         # Table view with configurable columns - Attio style
         rx.el.div(
@@ -260,7 +263,7 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                         rx.el.span("Name", class_name="text-gray-400 text-xs font-semibold uppercase tracking-wide"),
                         rx.el.button(
                             rx.icon("plus", class_name="h-3.5 w-3.5 text-gray-400 hover:text-white"),
-                            on_click=ListsState.toggle_add_item_modal,
+                            on_click=CollectionsState.toggle_add_item_modal,
                             class_name="ml-auto opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-700/50 rounded",
                         ),
                         class_name="flex items-center justify-between",
@@ -269,9 +272,9 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                     data_column_header="name",
                     style={
                         "backgroundColor": "rgb(23, 23, 25)",
-                        "width": f"{ListsState.column_width_name}px",
-                        "minWidth": f"{ListsState.column_width_name}px",
-                        "maxWidth": f"{ListsState.column_width_name}px",
+                        "width": f"{CollectionsState.column_width_name}px",
+                        "minWidth": f"{CollectionsState.column_width_name}px",
+                        "maxWidth": f"{CollectionsState.column_width_name}px",
                     },
                 ),
                 # Description column
@@ -281,9 +284,9 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                     data_column_header="description",
                     style={
                         "backgroundColor": "rgb(23, 23, 25)",
-                        "width": f"{ListsState.column_width_description}px",
-                        "minWidth": f"{ListsState.column_width_description}px",
-                        "maxWidth": f"{ListsState.column_width_description}px",
+                        "width": f"{CollectionsState.column_width_description}px",
+                        "minWidth": f"{CollectionsState.column_width_description}px",
+                        "maxWidth": f"{CollectionsState.column_width_description}px",
                     },
                 ),
                 # Unit column
@@ -293,9 +296,9 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                     data_column_header="unit",
                     style={
                         "backgroundColor": "rgb(23, 23, 25)",
-                        "width": f"{ListsState.column_width_unit}px",
-                        "minWidth": f"{ListsState.column_width_unit}px",
-                        "maxWidth": f"{ListsState.column_width_unit}px",
+                        "width": f"{CollectionsState.column_width_unit}px",
+                        "minWidth": f"{CollectionsState.column_width_unit}px",
+                        "maxWidth": f"{CollectionsState.column_width_unit}px",
                     },
                 ),
                 # Site column
@@ -305,9 +308,9 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                     data_column_header="site_name",
                     style={
                         "backgroundColor": "rgb(23, 23, 25)",
-                        "width": f"{ListsState.column_width_site_name}px",
-                        "minWidth": f"{ListsState.column_width_site_name}px",
-                        "maxWidth": f"{ListsState.column_width_site_name}px",
+                        "width": f"{CollectionsState.column_width_site_name}px",
+                        "minWidth": f"{CollectionsState.column_width_site_name}px",
+                        "maxWidth": f"{CollectionsState.column_width_site_name}px",
                     },
                 ),
                 # Value column
@@ -317,9 +320,9 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                     data_column_header="value",
                     style={
                         "backgroundColor": "rgb(23, 23, 25)",
-                        "width": f"{ListsState.column_width_value}px",
-                        "minWidth": f"{ListsState.column_width_value}px",
-                        "maxWidth": f"{ListsState.column_width_value}px",
+                        "width": f"{CollectionsState.column_width_value}px",
+                        "minWidth": f"{CollectionsState.column_width_value}px",
+                        "maxWidth": f"{CollectionsState.column_width_value}px",
                     },
                 ),
                 # Type column (last, no resize handle)
@@ -328,9 +331,9 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                     class_name="px-4 py-3 flex-shrink-0",
                     style={
                         "backgroundColor": "rgb(23, 23, 25)",
-                        "width": f"{ListsState.column_width_type}px",
-                        "minWidth": f"{ListsState.column_width_type}px",
-                        "maxWidth": f"{ListsState.column_width_type}px",
+                        "width": f"{CollectionsState.column_width_type}px",
+                        "minWidth": f"{CollectionsState.column_width_type}px",
+                        "maxWidth": f"{CollectionsState.column_width_type}px",
                     },
                 ),
                 class_name="flex border-b border-gray-700 group relative",
@@ -342,7 +345,7 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                 rx.el.div(
                     class_name="resize-handle-object absolute top-0 bottom-0 cursor-col-resize hover:bg-green-500 transition-colors",
                     style={
-                        "left": f"{ListsState.column_width_name - 2}px",
+                        "left": f"{CollectionsState.column_width_name - 2}px",
                         "width": "4px",
                         "zIndex": 50,
                         "pointerEvents": "auto",
@@ -354,7 +357,7 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                 rx.el.div(
                     class_name="resize-handle-object absolute top-0 bottom-0 cursor-col-resize hover:bg-green-500 transition-colors",
                     style={
-                        "left": f"{ListsState.column_width_name + ListsState.column_width_description - 2}px",
+                        "left": f"{CollectionsState.column_width_name + CollectionsState.column_width_description - 2}px",
                         "width": "4px",
                         "zIndex": 50,
                         "pointerEvents": "auto",
@@ -366,7 +369,7 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                 rx.el.div(
                     class_name="resize-handle-object absolute top-0 bottom-0 cursor-col-resize hover:bg-green-500 transition-colors",
                     style={
-                        "left": f"{ListsState.column_width_name + ListsState.column_width_description + ListsState.column_width_unit - 2}px",
+                        "left": f"{CollectionsState.column_width_name + CollectionsState.column_width_description + CollectionsState.column_width_unit - 2}px",
                         "width": "4px",
                         "zIndex": 50,
                         "pointerEvents": "auto",
@@ -378,7 +381,7 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                 rx.el.div(
                     class_name="resize-handle-object absolute top-0 bottom-0 cursor-col-resize hover:bg-green-500 transition-colors",
                     style={
-                        "left": f"{ListsState.column_width_name + ListsState.column_width_description + ListsState.column_width_unit + ListsState.column_width_site_name - 2}px",
+                        "left": f"{CollectionsState.column_width_name + CollectionsState.column_width_description + CollectionsState.column_width_unit + CollectionsState.column_width_site_name - 2}px",
                         "width": "4px",
                         "zIndex": 50,
                         "pointerEvents": "auto",
@@ -390,7 +393,7 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                 rx.el.div(
                     class_name="resize-handle-object absolute top-0 bottom-0 cursor-col-resize hover:bg-green-500 transition-colors",
                     style={
-                        "left": f"{ListsState.column_width_name + ListsState.column_width_description + ListsState.column_width_unit + ListsState.column_width_site_name + ListsState.column_width_value - 2}px",
+                        "left": f"{CollectionsState.column_width_name + CollectionsState.column_width_description + CollectionsState.column_width_unit + CollectionsState.column_width_site_name + CollectionsState.column_width_value - 2}px",
                         "width": "4px",
                         "zIndex": 50,
                         "pointerEvents": "auto",
@@ -417,9 +420,9 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                             data_column="name",
                             style={
                                 "backgroundColor": "rgb(23, 23, 25)",
-                                "width": f"{ListsState.column_width_name}px",
-                                "minWidth": f"{ListsState.column_width_name}px",
-                                "maxWidth": f"{ListsState.column_width_name}px",
+                                "width": f"{CollectionsState.column_width_name}px",
+                                "minWidth": f"{CollectionsState.column_width_name}px",
+                                "maxWidth": f"{CollectionsState.column_width_name}px",
                                 "overflow": "hidden",
                             },
                         ),
@@ -434,9 +437,9 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                             data_column="description",
                             style={
                                 "backgroundColor": "rgb(23, 23, 25)",
-                                "width": f"{ListsState.column_width_description}px",
-                                "minWidth": f"{ListsState.column_width_description}px",
-                                "maxWidth": f"{ListsState.column_width_description}px",
+                                "width": f"{CollectionsState.column_width_description}px",
+                                "minWidth": f"{CollectionsState.column_width_description}px",
+                                "maxWidth": f"{CollectionsState.column_width_description}px",
                                 "overflow": "hidden",
                             },
                         ),
@@ -451,9 +454,9 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                             data_column="unit",
                             style={
                                 "backgroundColor": "rgb(23, 23, 25)",
-                                "width": f"{ListsState.column_width_unit}px",
-                                "minWidth": f"{ListsState.column_width_unit}px",
-                                "maxWidth": f"{ListsState.column_width_unit}px",
+                                "width": f"{CollectionsState.column_width_unit}px",
+                                "minWidth": f"{CollectionsState.column_width_unit}px",
+                                "maxWidth": f"{CollectionsState.column_width_unit}px",
                                 "overflow": "hidden",
                             },
                         ),
@@ -468,9 +471,9 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                             data_column="site_name",
                             style={
                                 "backgroundColor": "rgb(23, 23, 25)",
-                                "width": f"{ListsState.column_width_site_name}px",
-                                "minWidth": f"{ListsState.column_width_site_name}px",
-                                "maxWidth": f"{ListsState.column_width_site_name}px",
+                                "width": f"{CollectionsState.column_width_site_name}px",
+                                "minWidth": f"{CollectionsState.column_width_site_name}px",
+                                "maxWidth": f"{CollectionsState.column_width_site_name}px",
                                 "overflow": "hidden",
                             },
                         ),
@@ -489,9 +492,9 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                             data_column="value",
                             style={
                                 "backgroundColor": "rgb(23, 23, 25)",
-                                "width": f"{ListsState.column_width_value}px",
-                                "minWidth": f"{ListsState.column_width_value}px",
-                                "maxWidth": f"{ListsState.column_width_value}px",
+                                "width": f"{CollectionsState.column_width_value}px",
+                                "minWidth": f"{CollectionsState.column_width_value}px",
+                                "maxWidth": f"{CollectionsState.column_width_value}px",
                                 "overflow": "hidden",
                             },
                         ),
@@ -513,9 +516,9 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
                             data_column="type",
                             style={
                                 "backgroundColor": "rgb(23, 23, 25)",
-                                "width": f"{ListsState.column_width_type}px",
-                                "minWidth": f"{ListsState.column_width_type}px",
-                                "maxWidth": f"{ListsState.column_width_type}px",
+                                "width": f"{CollectionsState.column_width_type}px",
+                                "minWidth": f"{CollectionsState.column_width_type}px",
+                                "maxWidth": f"{CollectionsState.column_width_type}px",
                                 "overflow": "hidden",
                             },
                         ),
@@ -535,20 +538,20 @@ def object_list_view(object_type: str, items: list[TimeSeries]) -> rx.Component:
 def configurable_list_view() -> rx.Component:
     """A list view with configurable columns, similar to Attio."""
     return rx.cond(
-        ListsState.selected_menu_item != "",
+        WorkspaceState.selected_menu_item != "",
         # Show menu item "coming soon" view
         rx.el.div(
             rx.el.span(
-                f"{ListsState.selected_menu_item} view coming soon",
+                f"{WorkspaceState.selected_menu_item} view coming soon",
                 class_name="text-gray-400 text-sm",
             ),
             class_name="flex items-center justify-center py-12",
         ),
         rx.cond(
-            ListsState.selected_object_type != "",
+            EntitiesState.selected_object_type != "",
             # Show object type view
             rx.cond(
-                ListsState.is_loading,
+                EntitiesState.is_loading,
                 # Show loading spinner
                 rx.el.div(
                     rx.el.div(
@@ -567,11 +570,11 @@ def configurable_list_view() -> rx.Component:
                     class_name="flex items-center justify-center py-12 min-h-[400px]",
                 ),
                 rx.cond(
-                    ListsState.selected_object_type == "TimeSeries",
-                    object_list_view("TimeSeries", ListsState.all_time_series_items),
+                    EntitiesState.selected_object_type == "TimeSeries",
+                    object_list_view("TimeSeries", EntitiesState.all_time_series_entities),
                     rx.el.div(
                         rx.el.span(
-                            f"{ListsState.selected_object_type} view coming soon",
+                            f"{EntitiesState.selected_object_type} view coming soon",
                             class_name="text-gray-400 text-sm",
                         ),
                         class_name="flex items-center justify-center py-12",
@@ -579,7 +582,7 @@ def configurable_list_view() -> rx.Component:
                 ),
             ),
             rx.cond(
-                ListsState.selected_list,
+                CollectionsState.selected_collection,
                 rx.el.div(
             # List header with name and emoji
             rx.el.div(
@@ -589,13 +592,13 @@ def configurable_list_view() -> rx.Component:
                         rx.el.button(
                             rx.el.span(
                                 rx.cond(
-                                    ListsState.selected_list["emoji"] != "",
-                                    ListsState.selected_list["emoji"],
+                                    CollectionsState.selected_collection["emoji"] != "",
+                                    CollectionsState.selected_collection["emoji"],
                                     "📋",
                                 ),
                                 class_name="text-2xl",
                             ),
-                            on_click=ListsState.toggle_emoji_picker,
+                            on_click=CollectionsState.toggle_emoji_picker,
                             class_name="w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-md transition-colors",
                         ),
                         # Emoji picker (positioned relative to button)
@@ -605,11 +608,11 @@ def configurable_list_view() -> rx.Component:
                     # List name and type
                     rx.el.div(
                         rx.el.h2(
-                            ListsState.selected_list["name"],
+                            CollectionsState.selected_collection["name"],
                             class_name="text-white font-bold text-xl",
                         ),
                         rx.el.span(
-                            f"{ListsState.selected_list['object_type']} list",
+                            f"{CollectionsState.selected_collection['object_type']} collection",
                             class_name="text-gray-400 text-sm ml-2",
                         ),
                         class_name="flex items-center",
@@ -620,7 +623,7 @@ def configurable_list_view() -> rx.Component:
             ),
             # Check view type and render accordingly
             rx.cond(
-                ListsState.selected_list_view_type == "time_series_cards",
+                CollectionsState.selected_collection_view_type == "time_series_cards",
                 # Time Series Card Layout with column toggle
                 rx.el.div(
                     # Column toggle button
@@ -628,7 +631,7 @@ def configurable_list_view() -> rx.Component:
                         rx.el.button(
                             rx.el.div(
                                 rx.cond(
-                                    ListsState.timeseries_card_columns == 1,
+                                    CollectionsState.timeseries_card_columns == 1,
                                     rx.icon(
                                         "layout-list",
                                         class_name="h-4 w-4 text-white",
@@ -640,7 +643,7 @@ def configurable_list_view() -> rx.Component:
                                 ),
                                 rx.el.span(
                                     rx.cond(
-                                        ListsState.timeseries_card_columns == 1,
+                                        CollectionsState.timeseries_card_columns == 1,
                                         "1 Column",
                                         "2 Columns",
                                     ),
@@ -648,13 +651,13 @@ def configurable_list_view() -> rx.Component:
                                 ),
                                 class_name="flex items-center",
                             ),
-                            on_click=ListsState.toggle_timeseries_card_columns,
+                            on_click=CollectionsState.toggle_timeseries_card_columns,
                             class_name="px-3 py-2 bg-gray-800/50 hover:bg-gray-800/70 rounded-md border border-gray-700 transition-colors",
                         ),
                         class_name="mb-4",
                     ),
                     # Cards grid
-                timeseries_card_grid_view(ListsState.esett_card_data),
+                timeseries_card_grid_view(CollectionsState.esett_card_data),
                     class_name="",
                 ),
                 # Default table view
@@ -665,7 +668,7 @@ def configurable_list_view() -> rx.Component:
             rx.el.input(
                 type="hidden",
                 id="column-resize-input",
-                on_change=ListsState.set_column_width,
+                on_change=CollectionsState.set_column_width,
             ),
             # Table view with configurable columns - Attio style
             rx.el.div(
@@ -810,7 +813,7 @@ def configurable_list_view() -> rx.Component:
                                 rx.el.span("Name", class_name="text-gray-400 text-xs font-semibold uppercase tracking-wide"),
                                 rx.el.button(
                                     rx.icon("plus", class_name="h-3.5 w-3.5 text-gray-400 hover:text-white"),
-                                    on_click=ListsState.toggle_add_item_modal,
+                                    on_click=CollectionsState.toggle_add_item_modal,
                                     class_name="ml-auto opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-700/50 rounded",
                                 ),
                                 class_name="flex items-center justify-between",
@@ -819,9 +822,9 @@ def configurable_list_view() -> rx.Component:
                             data_column_header="name",
                             style={
                                 "backgroundColor": "rgb(23, 23, 25)",
-                                "width": f"{ListsState.column_width_name}px",
-                                "minWidth": f"{ListsState.column_width_name}px",
-                                "maxWidth": f"{ListsState.column_width_name}px",
+                                "width": f"{CollectionsState.column_width_name}px",
+                                "minWidth": f"{CollectionsState.column_width_name}px",
+                                "maxWidth": f"{CollectionsState.column_width_name}px",
                             },
                         ),
                         # Description column
@@ -831,9 +834,9 @@ def configurable_list_view() -> rx.Component:
                             data_column_header="description",
                             style={
                                 "backgroundColor": "rgb(23, 23, 25)",
-                                "width": f"{ListsState.column_width_description}px",
-                                "minWidth": f"{ListsState.column_width_description}px",
-                                "maxWidth": f"{ListsState.column_width_description}px",
+                                "width": f"{CollectionsState.column_width_description}px",
+                                "minWidth": f"{CollectionsState.column_width_description}px",
+                                "maxWidth": f"{CollectionsState.column_width_description}px",
                             },
                         ),
                         # Unit column
@@ -843,9 +846,9 @@ def configurable_list_view() -> rx.Component:
                             data_column_header="unit",
                             style={
                                 "backgroundColor": "rgb(23, 23, 25)",
-                                "width": f"{ListsState.column_width_unit}px",
-                                "minWidth": f"{ListsState.column_width_unit}px",
-                                "maxWidth": f"{ListsState.column_width_unit}px",
+                                "width": f"{CollectionsState.column_width_unit}px",
+                                "minWidth": f"{CollectionsState.column_width_unit}px",
+                                "maxWidth": f"{CollectionsState.column_width_unit}px",
                             },
                         ),
                         # Site column
@@ -855,9 +858,9 @@ def configurable_list_view() -> rx.Component:
                             data_column_header="site_name",
                             style={
                                 "backgroundColor": "rgb(23, 23, 25)",
-                                "width": f"{ListsState.column_width_site_name}px",
-                                "minWidth": f"{ListsState.column_width_site_name}px",
-                                "maxWidth": f"{ListsState.column_width_site_name}px",
+                                "width": f"{CollectionsState.column_width_site_name}px",
+                                "minWidth": f"{CollectionsState.column_width_site_name}px",
+                                "maxWidth": f"{CollectionsState.column_width_site_name}px",
                             },
                         ),
                         # Value column
@@ -867,9 +870,9 @@ def configurable_list_view() -> rx.Component:
                             data_column_header="value",
                             style={
                                 "backgroundColor": "rgb(23, 23, 25)",
-                                "width": f"{ListsState.column_width_value}px",
-                                "minWidth": f"{ListsState.column_width_value}px",
-                                "maxWidth": f"{ListsState.column_width_value}px",
+                                "width": f"{CollectionsState.column_width_value}px",
+                                "minWidth": f"{CollectionsState.column_width_value}px",
+                                "maxWidth": f"{CollectionsState.column_width_value}px",
                             },
                         ),
                         # Type column (last, no resize handle)
@@ -878,9 +881,9 @@ def configurable_list_view() -> rx.Component:
                             class_name="px-4 py-3 flex-shrink-0",
                             style={
                                 "backgroundColor": "rgb(23, 23, 25)",
-                                "width": f"{ListsState.column_width_type}px",
-                                "minWidth": f"{ListsState.column_width_type}px",
-                                "maxWidth": f"{ListsState.column_width_type}px",
+                                "width": f"{CollectionsState.column_width_type}px",
+                                "minWidth": f"{CollectionsState.column_width_type}px",
+                                "maxWidth": f"{CollectionsState.column_width_type}px",
                             },
                         ),
                         class_name="flex border-b border-gray-700 group relative",
@@ -892,7 +895,7 @@ def configurable_list_view() -> rx.Component:
                     rx.el.div(
                         class_name="resize-handle absolute top-0 bottom-0 cursor-col-resize hover:bg-green-500 transition-colors",
                         style={
-                            "left": f"{ListsState.column_width_name - 2}px",
+                            "left": f"{CollectionsState.column_width_name - 2}px",
                             "width": "4px",
                             "zIndex": 50,
                             "pointerEvents": "auto",
@@ -904,7 +907,7 @@ def configurable_list_view() -> rx.Component:
                     rx.el.div(
                         class_name="resize-handle absolute top-0 bottom-0 cursor-col-resize hover:bg-green-500 transition-colors",
                         style={
-                            "left": f"{ListsState.column_width_name + ListsState.column_width_description - 2}px",
+                            "left": f"{CollectionsState.column_width_name + CollectionsState.column_width_description - 2}px",
                             "width": "4px",
                             "zIndex": 50,
                             "pointerEvents": "auto",
@@ -916,7 +919,7 @@ def configurable_list_view() -> rx.Component:
                     rx.el.div(
                         class_name="resize-handle absolute top-0 bottom-0 cursor-col-resize hover:bg-green-500 transition-colors",
                         style={
-                            "left": f"{ListsState.column_width_name + ListsState.column_width_description + ListsState.column_width_unit - 2}px",
+                            "left": f"{CollectionsState.column_width_name + CollectionsState.column_width_description + CollectionsState.column_width_unit - 2}px",
                             "width": "4px",
                             "zIndex": 50,
                             "pointerEvents": "auto",
@@ -928,7 +931,7 @@ def configurable_list_view() -> rx.Component:
                     rx.el.div(
                         class_name="resize-handle absolute top-0 bottom-0 cursor-col-resize hover:bg-green-500 transition-colors",
                         style={
-                            "left": f"{ListsState.column_width_name + ListsState.column_width_description + ListsState.column_width_unit + ListsState.column_width_site_name - 2}px",
+                            "left": f"{CollectionsState.column_width_name + CollectionsState.column_width_description + CollectionsState.column_width_unit + CollectionsState.column_width_site_name - 2}px",
                             "width": "4px",
                             "zIndex": 50,
                             "pointerEvents": "auto",
@@ -940,7 +943,7 @@ def configurable_list_view() -> rx.Component:
                     rx.el.div(
                         class_name="resize-handle absolute top-0 bottom-0 cursor-col-resize hover:bg-green-500 transition-colors",
                         style={
-                            "left": f"{ListsState.column_width_name + ListsState.column_width_description + ListsState.column_width_unit + ListsState.column_width_site_name + ListsState.column_width_value - 2}px",
+                            "left": f"{CollectionsState.column_width_name + CollectionsState.column_width_description + CollectionsState.column_width_unit + CollectionsState.column_width_site_name + CollectionsState.column_width_value - 2}px",
                             "width": "4px",
                             "zIndex": 50,
                             "pointerEvents": "auto",
@@ -954,7 +957,7 @@ def configurable_list_view() -> rx.Component:
                 # Table rows
                 rx.el.div(
                     rx.foreach(
-                        ListsState.selected_list_items,
+                        CollectionsState.selected_collection_entities,
                         lambda item: rx.el.div(
                             # First column
                             rx.el.div(
@@ -967,9 +970,9 @@ def configurable_list_view() -> rx.Component:
                                 data_column="name",
                                 style={
                                     "backgroundColor": "rgb(23, 23, 25)",
-                                    "width": f"{ListsState.column_width_name}px",
-                                    "minWidth": f"{ListsState.column_width_name}px",
-                                    "maxWidth": f"{ListsState.column_width_name}px",
+                                    "width": f"{CollectionsState.column_width_name}px",
+                                    "minWidth": f"{CollectionsState.column_width_name}px",
+                                    "maxWidth": f"{CollectionsState.column_width_name}px",
                                     "overflow": "hidden",
                                 },
                             ),
@@ -984,9 +987,9 @@ def configurable_list_view() -> rx.Component:
                                 data_column="description",
                                 style={
                                     "backgroundColor": "rgb(23, 23, 25)",
-                                    "width": f"{ListsState.column_width_description}px",
-                                    "minWidth": f"{ListsState.column_width_description}px",
-                                    "maxWidth": f"{ListsState.column_width_description}px",
+                                    "width": f"{CollectionsState.column_width_description}px",
+                                    "minWidth": f"{CollectionsState.column_width_description}px",
+                                    "maxWidth": f"{CollectionsState.column_width_description}px",
                                     "overflow": "hidden",
                                 },
                             ),
@@ -1001,9 +1004,9 @@ def configurable_list_view() -> rx.Component:
                                 data_column="unit",
                                 style={
                                     "backgroundColor": "rgb(23, 23, 25)",
-                                    "width": f"{ListsState.column_width_unit}px",
-                                    "minWidth": f"{ListsState.column_width_unit}px",
-                                    "maxWidth": f"{ListsState.column_width_unit}px",
+                                    "width": f"{CollectionsState.column_width_unit}px",
+                                    "minWidth": f"{CollectionsState.column_width_unit}px",
+                                    "maxWidth": f"{CollectionsState.column_width_unit}px",
                                     "overflow": "hidden",
                                 },
                             ),
@@ -1018,9 +1021,9 @@ def configurable_list_view() -> rx.Component:
                                 data_column="site_name",
                                 style={
                                     "backgroundColor": "rgb(23, 23, 25)",
-                                    "width": f"{ListsState.column_width_site_name}px",
-                                    "minWidth": f"{ListsState.column_width_site_name}px",
-                                    "maxWidth": f"{ListsState.column_width_site_name}px",
+                                    "width": f"{CollectionsState.column_width_site_name}px",
+                                    "minWidth": f"{CollectionsState.column_width_site_name}px",
+                                    "maxWidth": f"{CollectionsState.column_width_site_name}px",
                                     "overflow": "hidden",
                                 },
                             ),
@@ -1039,9 +1042,9 @@ def configurable_list_view() -> rx.Component:
                                 data_column="value",
                                 style={
                                     "backgroundColor": "rgb(23, 23, 25)",
-                                    "width": f"{ListsState.column_width_value}px",
-                                    "minWidth": f"{ListsState.column_width_value}px",
-                                    "maxWidth": f"{ListsState.column_width_value}px",
+                                    "width": f"{CollectionsState.column_width_value}px",
+                                    "minWidth": f"{CollectionsState.column_width_value}px",
+                                    "maxWidth": f"{CollectionsState.column_width_value}px",
                                     "overflow": "hidden",
                                 },
                             ),
@@ -1063,9 +1066,9 @@ def configurable_list_view() -> rx.Component:
                                 data_column="type",
                                 style={
                                     "backgroundColor": "rgb(23, 23, 25)",
-                                    "width": f"{ListsState.column_width_type}px",
-                                    "minWidth": f"{ListsState.column_width_type}px",
-                                    "maxWidth": f"{ListsState.column_width_type}px",
+                                    "width": f"{CollectionsState.column_width_type}px",
+                                    "minWidth": f"{CollectionsState.column_width_type}px",
+                                    "maxWidth": f"{CollectionsState.column_width_type}px",
                                     "overflow": "hidden",
                                 },
                             ),

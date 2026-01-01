@@ -1,5 +1,7 @@
 import reflex as rx
-from app.states.lists import ListsState
+from app.states.workspace import WorkspaceState
+from app.states.entities import EntitiesState
+from app.states.collections import CollectionsState
 
 
 def rebase_icon() -> rx.Component:
@@ -105,7 +107,7 @@ def lists_sidebar() -> rx.Component:
         rx.el.div(
             # Workspace selector with toggle button (like Attio)
             rx.cond(
-                ListsState.sidebar_collapsed == False,
+                WorkspaceState.sidebar_collapsed == False,
                 rx.el.div(
                     rx.el.div(
                         # Workspace selector button
@@ -119,18 +121,18 @@ def lists_sidebar() -> rx.Component:
                                 rx.icon("chevron-down", class_name="h-4 w-4 text-gray-400 ml-2"),
                                 rx.el.button(
                                     rx.icon("panel-left", class_name="h-4 w-4 text-gray-400"),
-                                    on_click=ListsState.toggle_sidebar,
+                                    on_click=WorkspaceState.toggle_sidebar,
                                     class_name="ml-auto p-1 hover:bg-gray-800/30 rounded transition-colors",
                                 ),
                                 class_name="flex items-center w-full",
                             ),
-                            on_click=ListsState.toggle_workspace_dropdown,
+                            on_click=WorkspaceState.toggle_workspace_dropdown,
                             class_name="w-full px-3 py-2 hover:bg-gray-800/30 rounded-md text-left",
                             id="workspace-selector-button",
                         ),
                         # Dropdown menu
                         rx.cond(
-                            ListsState.workspace_dropdown_open,
+                            WorkspaceState.workspace_dropdown_open,
                             rx.el.div(
                                 rx.el.script(
                                     """
@@ -155,7 +157,7 @@ def lists_sidebar() -> rx.Component:
                                         ),
                                         class_name="flex items-center",
                                     ),
-                                    on_click=ListsState.close_workspace_dropdown,
+                                    on_click=WorkspaceState.close_workspace_dropdown,
                                     class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/50 rounded-md text-left transition-colors",
                                 ),
                                 rx.el.button(
@@ -167,7 +169,7 @@ def lists_sidebar() -> rx.Component:
                                         ),
                                         class_name="flex items-center",
                                     ),
-                                    on_click=ListsState.navigate_to_settings,
+                                    on_click=WorkspaceState.navigate_to_settings,
                                     class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/50 rounded-md text-left transition-colors",
                                 ),
                                 rx.el.button(
@@ -179,7 +181,7 @@ def lists_sidebar() -> rx.Component:
                                         ),
                                         class_name="flex items-center",
                                     ),
-                                    on_click=ListsState.close_workspace_dropdown,
+                                    on_click=WorkspaceState.close_workspace_dropdown,
                                     class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/50 rounded-md text-left transition-colors",
                                 ),
                                 rx.el.button(
@@ -191,7 +193,7 @@ def lists_sidebar() -> rx.Component:
                                         ),
                                         class_name="flex items-center",
                                     ),
-                                    on_click=ListsState.close_workspace_dropdown,
+                                    on_click=WorkspaceState.close_workspace_dropdown,
                                     class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/50 rounded-md text-left transition-colors",
                                 ),
                                 class_name="w-64 bg-gray-900 border border-gray-800 rounded-lg shadow-lg p-1",
@@ -210,7 +212,7 @@ def lists_sidebar() -> rx.Component:
                 rx.el.div(
                     rx.el.button(
                         rx.icon("panel-left", class_name="h-4 w-4 text-gray-400"),
-                        on_click=ListsState.toggle_sidebar,
+                        on_click=WorkspaceState.toggle_sidebar,
                         class_name="p-2 hover:bg-gray-800/30 rounded transition-colors w-full flex justify-center",
                     ),
                     class_name="p-3 border-b border-gray-800",
@@ -218,7 +220,7 @@ def lists_sidebar() -> rx.Component:
             ),
             # Quick Actions (like Attio) - only when expanded
             rx.cond(
-                ListsState.sidebar_collapsed == False,
+                WorkspaceState.sidebar_collapsed == False,
                 rx.el.div(
                     # Quick Actions (like Attio)
                     rx.el.div(
@@ -238,13 +240,13 @@ def lists_sidebar() -> rx.Component:
             ),
             # Sections container
             rx.cond(
-                ListsState.sidebar_collapsed == False,
+                WorkspaceState.sidebar_collapsed == False,
                 rx.el.div(
                 # Top menu items (like Attio) - only show if visible in settings
                 rx.el.div(
                     rx.foreach(
-                        ListsState.visible_menu_items,
-                        lambda item: menu_item(item[0], item[1], ListsState.select_menu_item(item[0])),
+                        WorkspaceState.visible_menu_items,
+                        lambda item: menu_item(item[0], item[1], WorkspaceState.select_menu_item(item[0])),
                     ),
                     class_name="px-2 mb-4 space-y-0.5",
                 ),
@@ -252,9 +254,9 @@ def lists_sidebar() -> rx.Component:
                 collapsible_section(
                     title="Favorites",
                     icon_name="star",
-                    is_expanded=ListsState.favorites_expanded,
-                    toggle_handler=ListsState.toggle_favorites,
-                    add_handler=ListsState.toggle_create_list_modal,  # Placeholder
+                    is_expanded=WorkspaceState.favorites_expanded,
+                    toggle_handler=WorkspaceState.toggle_favorites,
+                    add_handler=CollectionsState.toggle_create_collection_modal,  # Placeholder
                     children=rx.el.div(
                         rx.el.span(
                             "No favorites yet",
@@ -266,21 +268,21 @@ def lists_sidebar() -> rx.Component:
                 collapsible_section(
                     title="Entities",
                     icon_name="database",
-                    is_expanded=ListsState.objects_expanded,
-                    toggle_handler=ListsState.toggle_objects,
-                    add_handler=ListsState.toggle_create_list_modal,  # Placeholder
+                    is_expanded=WorkspaceState.objects_expanded,
+                    toggle_handler=WorkspaceState.toggle_objects,
+                    add_handler=CollectionsState.toggle_create_collection_modal,  # Placeholder
                     children=rx.el.div(
                         rx.el.button(
                             rx.icon("building", class_name="h-4 w-4 text-gray-400 mr-2"),
                             rx.el.span(
                                 "TimeSeries",
                                 class_name=rx.cond(
-                                    ListsState.selected_object_type == "TimeSeries",
+                                    EntitiesState.selected_object_type == "TimeSeries",
                                     "px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
                                     "px-2 py-0.5 rounded text-xs font-mono bg-gray-800/40 text-gray-400",
                                 ),
                             ),
-                            on_click=ListsState.select_object_type("TimeSeries"),
+                            on_click=EntitiesState.select_object_type("TimeSeries"),
                             class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
                         ),
                         rx.el.button(
@@ -288,12 +290,12 @@ def lists_sidebar() -> rx.Component:
                             rx.el.span(
                                 "Sites",
                                 class_name=rx.cond(
-                                    ListsState.selected_object_type == "Sites",
+                                    EntitiesState.selected_object_type == "Sites",
                                     "px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
                                     "px-2 py-0.5 rounded text-xs font-mono bg-gray-800/40 text-gray-400",
                                 ),
                             ),
-                            on_click=ListsState.select_object_type("Sites"),
+                            on_click=EntitiesState.select_object_type("Sites"),
                             class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
                         ),
                         rx.el.button(
@@ -301,12 +303,12 @@ def lists_sidebar() -> rx.Component:
                             rx.el.span(
                                 "Assets",
                                 class_name=rx.cond(
-                                    ListsState.selected_object_type == "Assets",
+                                    EntitiesState.selected_object_type == "Assets",
                                     "px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
                                     "px-2 py-0.5 rounded text-xs font-mono bg-gray-800/40 text-gray-400",
                                 ),
                             ),
-                            on_click=ListsState.select_object_type("Assets"),
+                            on_click=EntitiesState.select_object_type("Assets"),
                             class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
                         ),
                         class_name="flex flex-col gap-2",
@@ -316,12 +318,12 @@ def lists_sidebar() -> rx.Component:
                 collapsible_section(
                     title="Collections",
                     icon_name="list",
-                    is_expanded=ListsState.lists_expanded,
-                    toggle_handler=ListsState.toggle_lists,
-                    add_handler=ListsState.toggle_create_list_modal,
+                    is_expanded=WorkspaceState.collections_expanded,
+                    toggle_handler=WorkspaceState.toggle_collections,
+                    add_handler=CollectionsState.toggle_create_collection_modal,
                     children=rx.el.div(
                         rx.foreach(
-                            ListsState.lists,
+                            CollectionsState.collections,
                             lambda lst: rx.el.button(
                                 rx.el.div(
                                     rx.icon(
@@ -334,9 +336,9 @@ def lists_sidebar() -> rx.Component:
                                     ),
                                     class_name="flex items-center",
                                 ),
-                                on_click=ListsState.select_list(lst["id"]),
+                                on_click=CollectionsState.select_collection(lst["id"]),
                                 class_name=rx.cond(
-                                    ListsState.selected_list_id == lst["id"],
+                                    CollectionsState.selected_collection_id == lst["id"],
                                     "w-full flex items-center px-3 py-2 bg-gray-800/50 hover:bg-gray-800/70 rounded-md text-left",
                                     "w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left",
                                 ),
@@ -352,9 +354,9 @@ def lists_sidebar() -> rx.Component:
         class_name="h-screen border-r border-gray-800 flex flex-col transition-all duration-300",
         style={
             "backgroundColor": "rgb(16, 16, 18)",
-            "width": ListsState.get_sidebar_width_px,
-            "minWidth": ListsState.get_sidebar_width_px,
-            "maxWidth": ListsState.get_sidebar_width_px,
+            "width": WorkspaceState.get_sidebar_width_px,
+            "minWidth": WorkspaceState.get_sidebar_width_px,
+            "maxWidth": WorkspaceState.get_sidebar_width_px,
         },
     )
 

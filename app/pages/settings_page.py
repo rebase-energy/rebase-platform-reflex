@@ -1,5 +1,4 @@
 import reflex as rx
-from app.states.lists import ListsState
 from app.components.settings_sidebar import settings_sidebar
 from app.components.settings_content import settings_content
 

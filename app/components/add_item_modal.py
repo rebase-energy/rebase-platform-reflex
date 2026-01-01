@@ -1,15 +1,16 @@
 import reflex as rx
-from app.states.lists import ListsState
+from app.states.collections import CollectionsState
+from app.states.entities import EntitiesState
 
 
 def add_item_modal() -> rx.Component:
     """Modal for adding TimeSeries items, styled like Attio."""
     return rx.cond(
-        ListsState.show_add_item_modal,
+        CollectionsState.show_add_item_modal,
         rx.el.div(
             # Overlay
             rx.el.div(
-                on_click=ListsState.toggle_add_item_modal,
+                on_click=CollectionsState.toggle_add_item_modal,
                 class_name="fixed inset-0 z-40",
                 style={"backgroundColor": "rgba(16, 16, 18, 0.8)"},
             ),
@@ -27,7 +28,7 @@ def add_item_modal() -> rx.Component:
                     ),
                     rx.el.button(
                         rx.icon("x", class_name="h-5 w-5 text-gray-400 hover:text-white"),
-                        on_click=ListsState.toggle_add_item_modal,
+                        on_click=CollectionsState.toggle_add_item_modal,
                         class_name="hover:bg-gray-800 rounded-md p-1 transition-colors",
                     ),
                     class_name="flex items-center justify-between mb-6",
@@ -115,7 +116,7 @@ def add_item_modal() -> rx.Component:
                         ),
                         class_name="flex items-center justify-between",
                     ),
-                    on_submit=ListsState.add_time_series_item,
+                    on_submit=EntitiesState.create_time_series_entity,
                     class_name="w-full",
                 ),
                 class_name="relative bg-gray-800 rounded-lg p-6 max-w-lg w-full mx-4 shadow-xl z-50",

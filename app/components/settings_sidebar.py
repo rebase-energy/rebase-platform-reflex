@@ -1,5 +1,5 @@
 import reflex as rx
-from app.states.lists import ListsState
+from app.states.workspace import WorkspaceState
 
 
 def settings_sidebar() -> rx.Component:
@@ -49,9 +49,9 @@ def settings_sidebar() -> rx.Component:
                             ),
                             class_name="flex items-center",
                         ),
-                        on_click=ListsState.select_settings_section(item[0]),
-                        class_name=rx.cond(
-                            ListsState.selected_settings_section == item[0],
+                        on_click=WorkspaceState.select_settings_section(item[0]),
+                                class_name=rx.cond(
+                                    WorkspaceState.selected_settings_section == item[0],
                             "w-full flex items-center px-3 py-2 bg-gray-800/50 hover:bg-gray-800/70 rounded-md text-left mb-1",
                             "w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left mb-1",
                         ),

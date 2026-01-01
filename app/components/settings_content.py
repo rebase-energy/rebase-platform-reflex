@@ -1,5 +1,5 @@
 import reflex as rx
-from app.states.lists import ListsState
+from app.states.workspace import WorkspaceState
 
 
 def settings_general_content() -> rx.Component:
@@ -126,7 +126,7 @@ def settings_general_content() -> rx.Component:
 
 def settings_appearance_content() -> rx.Component:
     """Appearance settings content."""
-    from app.states.lists import ListsState
+    from app.states.workspace import WorkspaceState
     
     # Predefined accent colors
     accent_colors = [
@@ -191,9 +191,9 @@ def settings_appearance_content() -> rx.Component:
                             rx.el.span("Light", class_name="text-gray-300 text-sm"),
                             class_name="flex flex-col items-center",
                         ),
-                        on_click=ListsState.set_theme("Light"),
+                        on_click=WorkspaceState.set_theme("Light"),
                         class_name=rx.cond(
-                            ListsState.theme == "Light",
+                            WorkspaceState.theme == "Light",
                             "flex flex-col items-center p-4 border-2 border-purple-500 rounded-lg bg-gray-800/50",
                             "flex flex-col items-center p-4 border border-gray-700 rounded-lg hover:border-gray-600 bg-gray-800/30",
                         ),
@@ -216,9 +216,9 @@ def settings_appearance_content() -> rx.Component:
                             rx.el.span("Dark", class_name="text-gray-300 text-sm"),
                             class_name="flex flex-col items-center",
                         ),
-                        on_click=ListsState.set_theme("Dark"),
+                        on_click=WorkspaceState.set_theme("Dark"),
                         class_name=rx.cond(
-                            ListsState.theme == "Dark",
+                            WorkspaceState.theme == "Dark",
                             "flex flex-col items-center p-4 border-2 border-purple-500 rounded-lg bg-gray-800/50",
                             "flex flex-col items-center p-4 border border-gray-700 rounded-lg hover:border-gray-600 bg-gray-800/30",
                         ),
@@ -241,9 +241,9 @@ def settings_appearance_content() -> rx.Component:
                             rx.el.span("System", class_name="text-gray-300 text-sm"),
                             class_name="flex flex-col items-center",
                         ),
-                        on_click=ListsState.set_theme("System"),
+                        on_click=WorkspaceState.set_theme("System"),
                         class_name=rx.cond(
-                            ListsState.theme == "System",
+                            WorkspaceState.theme == "System",
                             "flex flex-col items-center p-4 border-2 border-purple-500 rounded-lg bg-gray-800/50",
                             "flex flex-col items-center p-4 border border-gray-700 rounded-lg hover:border-gray-600 bg-gray-800/30",
                         ),
@@ -274,9 +274,9 @@ def settings_appearance_content() -> rx.Component:
                                 class_name="w-10 h-10 rounded-full",
                                 style={"backgroundColor": color[0]},
                             ),
-                            on_click=ListsState.set_accent_color(color[0]),
+                            on_click=WorkspaceState.set_accent_color(color[0]),
                             class_name=rx.cond(
-                                ListsState.accent_color == color[0],
+                                WorkspaceState.accent_color == color[0],
                                 "p-1 border-2 border-white rounded-full",
                                 "p-1 border-2 border-transparent rounded-full hover:border-gray-600",
                             ),
@@ -293,13 +293,13 @@ def settings_appearance_content() -> rx.Component:
                     rx.el.div(
                         rx.el.div(
                             class_name="w-10 h-10 rounded border border-gray-700",
-                            style={"backgroundColor": ListsState.accent_color},
+                            style={"backgroundColor": WorkspaceState.accent_color},
                         ),
                         rx.el.input(
                             type="text",
                             placeholder="#000000",
-                            value=ListsState.custom_accent_color,
-                            on_change=ListsState.set_custom_accent_color,
+                            value=WorkspaceState.custom_accent_color,
+                            on_change=WorkspaceState.set_custom_accent_color,
                             class_name="flex-1 px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-md text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
                         ),
                         class_name="flex items-center gap-3",
@@ -322,7 +322,7 @@ def settings_appearance_content() -> rx.Component:
             ),
             rx.el.div(
                 rx.foreach(
-                    ListsState.menu_items_with_visibility,
+                    WorkspaceState.menu_items_with_visibility,
                     lambda item: rx.el.div(
                         rx.el.div(
                             rx.icon(item[1], class_name="h-4 w-4 text-gray-400 mr-2"),
@@ -346,7 +346,7 @@ def settings_appearance_content() -> rx.Component:
                                         class_name="w-11 h-6 bg-gray-700 rounded-full relative",
                                     ),
                                 ),
-                                on_click=ListsState.toggle_menu_item_visibility(item[0]),
+                                on_click=WorkspaceState.toggle_menu_item_visibility(item[0]),
                                 class_name="flex-shrink-0",
                             ),
                             class_name="flex items-center justify-between px-3 py-2 hover:bg-gray-800/30 rounded-md",
@@ -407,13 +407,13 @@ def settings_collections_content() -> rx.Component:
 def settings_content() -> rx.Component:
     """Main settings content area that shows the selected section."""
     return rx.cond(
-        ListsState.selected_settings_section == "General",
+        WorkspaceState.selected_settings_section == "General",
         settings_general_content(),
         rx.cond(
-            ListsState.selected_settings_section == "Appearance",
+            WorkspaceState.selected_settings_section == "Appearance",
             settings_appearance_content(),
             rx.cond(
-                ListsState.selected_settings_section == "Entities",
+                WorkspaceState.selected_settings_section == "Entities",
                 settings_entities_content(),
                 settings_collections_content(),
             ),

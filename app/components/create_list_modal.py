@@ -1,12 +1,12 @@
 import reflex as rx
-from app.states.lists import ListsState
+from app.states.collections import CollectionsState
 
 
 def create_list_modal() -> rx.Component:
     """Modal for creating a new list."""
     return rx.el.div(
         rx.cond(
-            ListsState.show_create_list_modal,
+            CollectionsState.show_create_collection_modal,
             rx.el.div(
                 rx.el.div(
                     rx.el.div(
@@ -21,7 +21,7 @@ def create_list_modal() -> rx.Component:
                                     class_name="block text-gray-300 text-sm font-medium mb-2",
                                 ),
                                 rx.el.input(
-                                    name="list_name",
+                                    name="collection_name",
                                     placeholder="Enter list name...",
                                     class_name="w-full border border-gray-700 rounded-md px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500",
                                     style={"backgroundColor": "rgb(16, 16, 18)"},  # Lowest level background for inputs
@@ -47,7 +47,7 @@ def create_list_modal() -> rx.Component:
                             rx.el.div(
                                 rx.el.button(
                                     "Cancel",
-                                    on_click=ListsState.toggle_create_list_modal,
+                                    on_click=CollectionsState.toggle_create_collection_modal,
                                     class_name="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 mr-2",
                                 ),
                                 rx.el.button(
@@ -57,7 +57,7 @@ def create_list_modal() -> rx.Component:
                                 ),
                                 class_name="flex justify-end",
                             ),
-                            on_submit=ListsState.create_list,
+                            on_submit=CollectionsState.create_collection,
                             class_name="w-full",
                         ),
                         class_name="relative",
@@ -67,7 +67,7 @@ def create_list_modal() -> rx.Component:
                 ),
                 class_name="fixed inset-0 flex items-center justify-center z-50",
                 style={"backgroundColor": "rgba(16, 16, 18, 0.8)"},  # Overlay with lowest level background
-                on_click=ListsState.toggle_create_list_modal,
+                on_click=CollectionsState.toggle_create_collection_modal,
             ),
         ),
     )

@@ -1,5 +1,5 @@
 import reflex as rx
-from app.states.lists import ListsState
+from app.states.workspace import WorkspaceState
 from app.components.lists_sidebar import lists_sidebar
 from app.components.configurable_list_view import configurable_list_view
 from app.components.create_list_modal import create_list_modal
@@ -12,7 +12,7 @@ def sidebar_resize_handle() -> rx.Component:
         rx.el.input(
             type="hidden",
             id="sidebar-resize-input",
-            on_change=ListsState.set_sidebar_width,
+            on_change=WorkspaceState.set_sidebar_width,
         ),
         rx.el.script(
             """
@@ -101,7 +101,7 @@ def lists_page() -> rx.Component:
             data_sidebar="true",
         ),
         rx.cond(
-            ListsState.sidebar_collapsed == False,
+            WorkspaceState.sidebar_collapsed == False,
             sidebar_resize_handle(),
         ),
         rx.el.div(

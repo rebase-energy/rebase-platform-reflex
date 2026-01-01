@@ -1,5 +1,5 @@
 import reflex as rx
-from app.states.lists import ListsState
+from app.states.collections import CollectionsState
 
 
 # Common emoji categories - simplified for better performance
@@ -15,11 +15,11 @@ EMOJI_CATEGORIES = {
 def emoji_picker() -> rx.Component:
     """Emoji picker component similar to Attio."""
     return rx.cond(
-        ListsState.show_emoji_picker,
+        CollectionsState.show_emoji_picker,
         rx.el.div(
             # Click outside overlay
             rx.el.div(
-                on_click=ListsState.toggle_emoji_picker,
+                on_click=CollectionsState.toggle_emoji_picker,
                 class_name="fixed inset-0 z-40",
                 style={"zIndex": 999},
             ),
@@ -29,8 +29,8 @@ def emoji_picker() -> rx.Component:
                 rx.el.input(
                     type="text",
                     placeholder="Search Emojis",
-                    value=ListsState.emoji_search_query,
-                    on_change=ListsState.set_emoji_search_query,
+                    value=CollectionsState.emoji_search_query,
+                    on_change=CollectionsState.set_emoji_search_query,
                     class_name="w-full px-3 py-2 mb-3 border border-gray-700 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500 text-sm",
                     style={"backgroundColor": "rgb(23, 23, 25)"},
                 ),
@@ -40,9 +40,9 @@ def emoji_picker() -> rx.Component:
                         list(EMOJI_CATEGORIES.keys()),
                         lambda category: rx.el.button(
                             category,
-                            on_click=ListsState.set_emoji_category(category),
+                            on_click=CollectionsState.set_emoji_category(category),
                             class_name=rx.cond(
-                                ListsState.emoji_selected_category == category,
+                                CollectionsState.emoji_selected_category == category,
                                 "px-3 py-1 text-sm text-white border-b-2 border-green-500 transition-colors",
                                 "px-3 py-1 text-sm text-gray-400 hover:text-white border-b-2 border-transparent hover:border-green-500 transition-colors",
                             ),
@@ -53,10 +53,10 @@ def emoji_picker() -> rx.Component:
                 # Emoji grid
                 rx.el.div(
                     rx.foreach(
-                        ListsState.current_emoji_list,
+                        CollectionsState.current_emoji_list,
                         lambda emoji: rx.el.button(
                             emoji,
-                            on_click=ListsState.set_list_emoji(emoji),
+                            on_click=CollectionsState.set_collection_emoji(emoji),
                             class_name="w-8 h-8 text-xl hover:bg-gray-700 rounded transition-colors flex items-center justify-center",
                         ),
                     ),

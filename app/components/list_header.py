@@ -1,5 +1,5 @@
 import reflex as rx
-from app.states.lists import ListsState
+from app.states.collections import CollectionsState
 
 
 def list_header() -> rx.Component:
@@ -14,8 +14,8 @@ def list_header() -> rx.Component:
                 ),
                 rx.el.input(
                     placeholder="Search...",
-                    value=ListsState.list_search_query,
-                    on_change=ListsState.set_list_search_query,
+                    value=CollectionsState.collection_search_query,
+                    on_change=CollectionsState.set_collection_search_query,
                     class_name="w-64 bg-gray-800/50 border border-gray-700 pl-9 pr-3 py-2 rounded-md text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
                 ),
                 class_name="relative",
@@ -32,7 +32,7 @@ def list_header() -> rx.Component:
                     rx.el.span("Sort", class_name="text-gray-300 text-sm font-medium ml-2"),
                     class_name="flex items-center",
                 ),
-                on_click=ListsState.toggle_sort_modal,
+                on_click=CollectionsState.toggle_sort_modal,
                 class_name="flex items-center px-3 py-2 rounded-md border border-dashed border-gray-600 hover:border-gray-500 hover:bg-gray-800/50 transition-colors",
             ),
             # Filter button (Attio style)
@@ -45,7 +45,7 @@ def list_header() -> rx.Component:
                     rx.el.span("Filter", class_name="text-gray-300 text-sm font-medium ml-2"),
                     class_name="flex items-center",
                 ),
-                on_click=ListsState.toggle_filter_modal,
+                on_click=CollectionsState.toggle_filter_modal,
                 class_name="flex items-center px-3 py-2 rounded-md border border-dashed border-gray-600 hover:border-gray-500 hover:bg-gray-800/50 transition-colors",
             ),
             class_name="flex items-center space-x-3",
