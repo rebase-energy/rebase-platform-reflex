@@ -37,11 +37,23 @@ WORKSPACE_SLUG = "rebase-energy"  # This will match WorkspaceState.workspace_slu
 class RootRedirectState(rx.State):
     """State for handling root redirect."""
     
+    @rx.event
     def on_load(self):
-        """Redirect to workspace slug on load."""
-        # Load workspace from database
-        yield WorkspaceState.load_workspace_from_db
-        # Use default workspace slug - in future this could be extracted from user context
+        """Redirect to default collection or workspace home on load."""
+        # Load workspace from database first
+        from app.services.supabase_service import SupabaseService
+        
+        try:
+            workspace = SupabaseService.get_workspace(WORKSPACE_SLUG)
+            if workspace:
+                default_collection_id = workspace.get("default_collection_id")
+                if default_collection_id:
+                    # Redirect to default collection
+                    return rx.redirect(f"/{WORKSPACE_SLUG}/collections/{default_collection_id}")
+        except Exception as e:
+            print(f"Error loading workspace for redirect: {e}")
+        
+        # Fallback to workspace home
         return rx.redirect(f"/{WORKSPACE_SLUG}")
 
 
@@ -52,8 +64,12 @@ def root_redirect() -> rx.Component:
     )
 
 
-# Root redirect to workspace slug
+# Root redirect to workspace slug / default collection
 app.add_page(root_redirect, route="/", on_load=RootRedirectState.on_load)
+
+# Login redirect - same behavior as root (redirects to default collection)
+app.add_page(root_redirect, route="/login", on_load=RootRedirectState.on_load)
+app.add_page(root_redirect, route=f"/{WORKSPACE_SLUG}/login", on_load=RootRedirectState.on_load)
 
 # Main index route - collections home page
 app.add_page(generic_page, route=f"/{WORKSPACE_SLUG}", on_load=[WorkspaceState.load_workspace_from_db, CollectionsState.on_load])

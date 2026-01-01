@@ -11,6 +11,7 @@ class WorkspaceState(rx.State):
     # Workspace configuration
     workspace_name: str = "rebase-energy"
     workspace_slug: str = "rebase-energy"
+    default_collection_id: str = ""  # Collection to show on login/start
     
     # Sidebar state
     sidebar_collapsed: bool = False
@@ -274,6 +275,7 @@ class WorkspaceState(rx.State):
                 self.accent_color = workspace.get("accent_color", self.accent_color)
                 self.sidebar_collapsed = workspace.get("sidebar_collapsed", self.sidebar_collapsed)
                 self.sidebar_width = workspace.get("sidebar_width", self.sidebar_width)
+                self.default_collection_id = workspace.get("default_collection_id", "") or ""
                 
                 # Load menu item visibility if present
                 menu_visibility = workspace.get("menu_item_visibility")
@@ -300,6 +302,7 @@ class WorkspaceState(rx.State):
                 "accent_color": self.accent_color,
                 "sidebar_collapsed": self.sidebar_collapsed,
                 "sidebar_width": self.sidebar_width,
+                "default_collection_id": self.default_collection_id or None,
                 "menu_item_visibility": self.menu_item_visibility,
             }
             result = SupabaseService.create_workspace(data)
@@ -323,9 +326,16 @@ class WorkspaceState(rx.State):
                 "accent_color": self.accent_color,
                 "sidebar_collapsed": self.sidebar_collapsed,
                 "sidebar_width": self.sidebar_width,
+                "default_collection_id": self.default_collection_id or None,
                 "menu_item_visibility": self.menu_item_visibility,
             }
             SupabaseService.update_workspace(self.workspace_id, data)
         except Exception as e:
             print(f"Failed to save workspace to database: {e}")
+    
+    @rx.event
+    def set_default_collection(self, collection_id: str):
+        """Set the default collection for the workspace."""
+        self.default_collection_id = collection_id
+        self._save_workspace_to_db()
 

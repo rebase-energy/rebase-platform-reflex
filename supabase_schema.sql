@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS workspaces (
     accent_color TEXT DEFAULT '#10b981',
     sidebar_collapsed BOOLEAN DEFAULT FALSE,
     sidebar_width INTEGER DEFAULT 256,
+    default_collection_id TEXT DEFAULT NULL,  -- The collection to show on login/start
     menu_item_visibility JSONB DEFAULT '{
         "Projects": true,
         "Workflows": true,
@@ -29,6 +30,15 @@ CREATE TABLE IF NOT EXISTS workspaces (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add default_collection_id column if it doesn't exist (for existing tables)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='workspaces' AND column_name='default_collection_id') THEN
+        ALTER TABLE workspaces ADD COLUMN default_collection_id TEXT DEFAULT NULL;
+    END IF;
+END $$;
 
 -- Create index on slug for faster lookups
 CREATE INDEX IF NOT EXISTS idx_workspaces_slug ON workspaces(slug);

@@ -310,6 +310,8 @@ class EntitiesState(rx.State):
     @rx.event
     def on_load_entity_page(self):
         """Initialize entities and set active entity type from route."""
+        # Reset flag to force fresh load from Supabase
+        self._entities_loaded = False
         # Load entities from Supabase
         self._load_entities_from_db()
         
@@ -607,12 +609,13 @@ class EntitiesState(rx.State):
             
             workspace = SupabaseService.get_workspace("rebase-energy")
             if not workspace:
+                print("Failed to save site: workspace not found")
                 return
             
             workspace_id = workspace.get("id", "")
+            entity_id = site["id"]
             
             db_entity = {
-                "id": site["id"],
                 "workspace_id": workspace_id,
                 "entity_type": "Site",
                 "data": {
@@ -625,7 +628,8 @@ class EntitiesState(rx.State):
                     "tags": site.get("tags", []),
                 },
             }
-            SupabaseService.upsert_entity(db_entity)
+            result = SupabaseService.upsert_entity(entity_id, db_entity)
+            print(f"Saved site to database: {result}")
         except Exception as e:
             print(f"Failed to save site to database: {e}")
     
@@ -636,12 +640,13 @@ class EntitiesState(rx.State):
             
             workspace = SupabaseService.get_workspace("rebase-energy")
             if not workspace:
+                print("Failed to save asset: workspace not found")
                 return
             
             workspace_id = workspace.get("id", "")
+            entity_id = asset["id"]
             
             db_entity = {
-                "id": asset["id"],
                 "workspace_id": workspace_id,
                 "entity_type": "Asset",
                 "data": {
@@ -654,7 +659,8 @@ class EntitiesState(rx.State):
                     "tags": asset.get("tags", []),
                 },
             }
-            SupabaseService.upsert_entity(db_entity)
+            result = SupabaseService.upsert_entity(entity_id, db_entity)
+            print(f"Saved asset to database: {result}")
         except Exception as e:
             print(f"Failed to save asset to database: {e}")
     

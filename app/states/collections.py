@@ -692,4 +692,8 @@ class CollectionsState(rx.State):
         
         # Save the new default collection to database
         self._save_collection_to_db(collection_id)
+        
+        # Also save to workspace settings
+        from app.states.workspace import WorkspaceState
+        yield WorkspaceState.set_default_collection(collection_id)
 
