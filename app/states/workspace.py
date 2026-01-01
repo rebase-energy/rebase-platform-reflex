@@ -108,7 +108,7 @@ class WorkspaceState(rx.State):
     def get_sidebar_width_px(self) -> str:
         """Get sidebar width as a string with 'px' suffix."""
         if self.sidebar_collapsed:
-            return "64px"
+            return "0px"  # Completely hidden when collapsed
         return f"{self.sidebar_width}px"
     
     @rx.var

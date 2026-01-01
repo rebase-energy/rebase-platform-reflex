@@ -12,6 +12,94 @@ from app.components.emoji_picker import emoji_picker
 DEFAULT_WORKSPACE_SLUG = "rebase-energy"
 
 
+def entity_badge(entity_type: str, size: str = "sm") -> rx.Component:
+    """
+    Render an entity type as a styled badge with mono font.
+    Used consistently throughout the app to indicate entity objects.
+    
+    Args:
+        entity_type: The entity type name
+        size: Size variant - "sm" for small, "lg" for large headers
+    """
+    if size == "lg":
+        return rx.el.span(
+            entity_type,
+            class_name="px-3 py-1 rounded text-base font-mono bg-gray-700/50 text-white font-semibold",
+        )
+    return rx.el.span(
+        entity_type,
+        class_name="px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
+    )
+
+
+def content_header() -> rx.Component:
+    """
+    Content header that displays the appropriate title based on current route.
+    This is displayed in a row with the sidebar toggle button.
+    """
+    return rx.cond(
+        WorkspaceState.is_menu_route,
+        # Menu item header
+        rx.el.div(
+            rx.el.h2(
+                WorkspaceState.current_menu_item_name,
+                class_name="text-white font-bold text-xl",
+            ),
+            class_name="flex items-center",
+        ),
+        rx.cond(
+            WorkspaceState.is_entity_route,
+            # Entity header
+            rx.el.div(
+                entity_badge(EntitiesState.active_object_type, size="lg"),
+                rx.el.span(
+                    f"All {EntitiesState.active_object_type} entities",
+                    class_name="text-gray-400 text-sm ml-3",
+                ),
+                class_name="flex items-center",
+            ),
+            rx.cond(
+                CollectionsState.active_collection,
+                # Collection header with emoji
+                rx.el.div(
+                    # Emoji button with picker
+                    rx.el.div(
+                        rx.el.button(
+                            rx.el.span(
+                                rx.cond(
+                                    CollectionsState.active_collection["emoji"] != "",
+                                    CollectionsState.active_collection["emoji"],
+                                    "📋",
+                                ),
+                                class_name="text-2xl",
+                            ),
+                            on_click=CollectionsState.toggle_emoji_picker,
+                            class_name="w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-md transition-colors",
+                        ),
+                        emoji_picker(),
+                        class_name="relative mr-3",
+                    ),
+                    # Collection name and type
+                    rx.el.div(
+                        rx.el.h2(
+                            CollectionsState.active_collection["name"],
+                            class_name="text-white font-bold text-xl",
+                        ),
+                        rx.el.span(
+                            CollectionsState.active_collection.get("object_type", "TimeSeries"),
+                            class_name="px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300 ml-2",
+                        ),
+                        class_name="flex items-center",
+                    ),
+                    class_name="flex items-center relative",
+                ),
+                # No collection selected - empty header
+                rx.fragment(),
+            ),
+        ),
+    )
+
+
 def content_router() -> rx.Component:
     """Route-driven content display - shows the appropriate view based on the current URL path."""
     return rx.cond(
@@ -148,33 +236,13 @@ def _get_entity_columns(entity_type: str) -> list[TableColumn]:
     ]
 
 
-def entity_badge(entity_type: str, size: str = "sm") -> rx.Component:
-    """
-    Render an entity type as a styled badge with mono font.
-    Used consistently throughout the app to indicate entity objects.
-    
-    Args:
-        entity_type: The entity type name
-        size: Size variant - "sm" for small, "lg" for large headers
-    """
-    if size == "lg":
-        return rx.el.span(
-            entity_type,
-            class_name="px-3 py-1 rounded text-base font-mono bg-gray-700/50 text-white font-semibold",
-        )
-    return rx.el.span(
-        entity_type,
-        class_name="px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
-    )
-
-
 def _entity_table(
     entity_type: str,
     items: list,
     resize_id_suffix: str,
 ) -> rx.Component:
     """
-    Unified entity table component.
+    Unified entity table component (header is in content_header).
     
     Args:
         entity_type: The type of entity (TimeSeries, Sites, Assets)
@@ -184,18 +252,6 @@ def _entity_table(
     columns = _get_entity_columns(entity_type)
     
     return rx.el.div(
-        # Entity header with entity badge
-        rx.el.div(
-            rx.el.div(
-                entity_badge(entity_type, size="lg"),
-                rx.el.span(
-                    f"All {entity_type} entities",
-                    class_name="text-gray-400 text-sm ml-3",
-                ),
-                class_name="flex items-center",
-            ),
-            class_name="mb-6",
-        ),
         # Search, Sort, Filter header
         table_header(),
         # Data table from centralized component
@@ -239,45 +295,8 @@ def _assets_entity_table() -> rx.Component:
 
 
 def _collection_view() -> rx.Component:
-    """Display collection view - either time series cards or table view."""
+    """Display collection view - either time series cards or table view (header is in content_header)."""
     return rx.el.div(
-        # Collection header with name and emoji
-        rx.el.div(
-            rx.el.div(
-                # Emoji button with picker
-                rx.el.div(
-                    rx.el.button(
-                        rx.el.span(
-                            rx.cond(
-                                CollectionsState.active_collection["emoji"] != "",
-                                CollectionsState.active_collection["emoji"],
-                                "📋",
-                            ),
-                            class_name="text-2xl",
-                        ),
-                        on_click=CollectionsState.toggle_emoji_picker,
-                        class_name="w-10 h-10 flex items-center justify-center hover:bg-gray-800 rounded-md transition-colors",
-                    ),
-                    # Emoji picker (positioned relative to button)
-                    emoji_picker(),
-                    class_name="relative mr-3",
-                ),
-                # Collection name and type
-                rx.el.div(
-                    rx.el.h2(
-                        CollectionsState.active_collection["name"],
-                        class_name="text-white font-bold text-xl",
-                    ),
-                    rx.el.span(
-                        CollectionsState.active_collection.get("object_type", "TimeSeries"),
-                        class_name="px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300 ml-2",
-                    ),
-                    class_name="flex items-center",
-                ),
-                class_name="flex items-center relative",
-            ),
-            class_name="mb-6",
-        ),
         # Check view type and render accordingly
         rx.cond(
             CollectionsState.active_collection_view_type == "time_series_cards",

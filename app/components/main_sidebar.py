@@ -212,15 +212,8 @@ def main_sidebar() -> rx.Component:
                     ),
                     class_name="p-3 border-b border-gray-800",
                 ),
-                # Collapsed state - just show toggle button
-                rx.el.div(
-                    rx.el.button(
-                        rx.icon("panel-left", class_name="h-4 w-4 text-gray-400"),
-                        on_click=WorkspaceState.toggle_sidebar,
-                        class_name="p-2 hover:bg-gray-800/30 rounded transition-colors w-full flex justify-center",
-                    ),
-                    class_name="p-3 border-b border-gray-800",
-                ),
+                # Collapsed state - sidebar is completely hidden, no content here
+                rx.fragment(),
             ),
             # Quick Actions - only when expanded
             rx.cond(
