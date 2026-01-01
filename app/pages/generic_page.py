@@ -1,7 +1,7 @@
 """Generic page component that can be used for all routes."""
 import reflex as rx
 from app.components.collections_sidebar import collections_sidebar
-from app.components.collection_view import collection_view
+from app.components.content_router import content_router
 from app.components.create_collection_modal import create_collection_modal
 from app.components.add_item_modal import add_item_modal
 
@@ -12,7 +12,7 @@ def generic_page() -> rx.Component:
         collections_sidebar(),
         rx.el.div(
             rx.el.div(
-                collection_view(),
+                content_router(),
                 class_name="p-6 pt-6",
             ),
             class_name="flex-1 h-screen overflow-y-auto",

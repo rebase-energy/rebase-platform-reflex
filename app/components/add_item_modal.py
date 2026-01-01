@@ -4,7 +4,7 @@ from app.states.entities import EntitiesState
 
 
 def add_item_modal() -> rx.Component:
-    """Modal for adding TimeSeries items, styled like Attio."""
+    """Modal for adding TimeSeries items."""
     return rx.cond(
         CollectionsState.show_add_item_modal,
         rx.el.div(
@@ -33,7 +33,7 @@ def add_item_modal() -> rx.Component:
                     ),
                     class_name="flex items-center justify-between mb-6",
                 ),
-                # Tabs (like Attio)
+                # Tabs
                 rx.el.div(
                     rx.el.button(
                         "All",

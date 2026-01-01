@@ -1,6 +1,7 @@
 import reflex as rx
 from app.states.workspace import WorkspaceState
 from app.states.collections import CollectionsState
+from app.states.entities import EntitiesState
 
 
 def settings_general_content() -> rx.Component:
@@ -390,6 +391,79 @@ def settings_entities_content() -> rx.Component:
     )
 
 
+def collection_row(collection: dict) -> rx.Component:
+    """Render a single collection row in the settings table."""
+    return rx.el.tr(
+        # Star icon and Collection name
+        rx.el.td(
+            rx.el.div(
+                rx.el.button(
+                    rx.icon(
+                        "star",
+                        class_name=rx.cond(
+                            collection.get("is_favorite", False),
+                            "h-4 w-4 text-yellow-400 fill-yellow-400",
+                            "h-4 w-4 text-gray-500 hover:text-yellow-400",
+                        ),
+                    ),
+                    on_click=CollectionsState.toggle_collection_favorite(collection["id"]),
+                    class_name="mr-2 hover:opacity-80 transition-opacity",
+                ),
+                rx.el.span(
+                    collection["name"],
+                    class_name="text-white text-sm",
+                ),
+                class_name="flex items-center",
+            ),
+            class_name="px-4 py-3",
+        ),
+        # Entity type
+        rx.el.td(
+            rx.el.span(
+                collection.get("object_type", "TimeSeries"),
+                class_name="px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
+            ),
+            class_name="px-4 py-3",
+        ),
+        # Created by
+        rx.el.td(
+            rx.el.span(
+                collection.get("created_by", "You"),
+                class_name="text-gray-300 text-sm",
+            ),
+            class_name="px-4 py-3",
+        ),
+        # Entries count - access from EntitiesState
+        rx.el.td(
+            rx.el.span(
+                EntitiesState.collection_entry_counts_dict.get(collection["id"], 0),
+                class_name="text-gray-300 text-sm",
+            ),
+            class_name="px-4 py-3",
+        ),
+        # Default radio button
+        rx.el.td(
+            rx.el.input(
+                type="radio",
+                name="default_collection",
+                checked=collection.get("is_default", False),
+                on_change=CollectionsState.set_default_collection(collection["id"]),
+                class_name="custom-radio-button",
+            ),
+            class_name="px-4 py-3 text-center",
+        ),
+        # Actions (three dots)
+        rx.el.td(
+            rx.el.button(
+                rx.icon("menu", class_name="h-4 w-4 text-gray-400 hover:text-white"),
+                class_name="hover:opacity-80 transition-opacity",
+            ),
+            class_name="px-4 py-3 text-center",
+        ),
+        class_name="border-b border-gray-800 hover:bg-gray-800/30 transition-colors",
+    )
+
+
 def settings_collections_content() -> rx.Component:
     """Collections settings content."""
     return rx.fragment(
@@ -480,79 +554,8 @@ def settings_collections_content() -> rx.Component:
                 ),
                 rx.el.tbody(
                     rx.foreach(
-                        CollectionsState.filtered_collections_with_entry_counts,
-                        lambda collection: rx.el.tr(
-                            # Star icon and Collection name
-                            rx.el.td(
-                                rx.el.div(
-                                    rx.el.button(
-                                        rx.icon(
-                                            "star",
-                                            class_name=rx.cond(
-                                                collection.get("is_favorite", False),
-                                                "h-4 w-4 text-yellow-400 fill-yellow-400",
-                                                "h-4 w-4 text-gray-500 hover:text-yellow-400",
-                                            ),
-                                        ),
-                                        on_click=CollectionsState.toggle_collection_favorite(collection["id"]),
-                                        class_name="mr-2 hover:opacity-80 transition-opacity",
-                                    ),
-                                    rx.el.span(
-                                        collection["name"],
-                                        class_name="text-white text-sm",
-                                    ),
-                                    class_name="flex items-center",
-                                ),
-                                class_name="px-4 py-3",
-                            ),
-                            # Entity type
-                            rx.el.td(
-                                rx.el.span(
-                                    collection.get("object_type", "TimeSeries"),
-                                    class_name="px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
-                                ),
-                                class_name="px-4 py-3",
-                            ),
-                            # Created by
-                            rx.el.td(
-                                rx.el.span(
-                                    collection.get("created_by", "Unknown"),
-                                    class_name="text-gray-300 text-sm",
-                                ),
-                                class_name="px-4 py-3",
-                            ),
-                            # Entries count
-                            rx.el.td(
-                                rx.el.span(
-                                    collection.get("entry_count", 0),
-                                    class_name="text-gray-300 text-sm",
-                                ),
-                                class_name="px-4 py-3",
-                            ),
-                            # Default radio button
-                            rx.el.td(
-                                rx.el.input(
-                                    type="radio",
-                                    name="default_collection",
-                                    checked=collection.get("is_default", False),
-                                    on_change=CollectionsState.set_default_collection(collection["id"]),
-                                    class_name="custom-radio-button",
-                                    style={
-                                        "--accent-color": WorkspaceState.accent_color,
-                                    },
-                                ),
-                                class_name="px-4 py-3",
-                            ),
-                            # Three dots menu
-                            rx.el.td(
-                                rx.el.button(
-                                    rx.icon("menu", class_name="h-4 w-4 text-gray-400 hover:text-white"),
-                                    class_name="hover:bg-gray-800 rounded-md p-1 transition-colors",
-                                ),
-                                class_name="px-4 py-3",
-                            ),
-                            class_name="border-b border-gray-800 hover:bg-gray-800/30 transition-colors",
-                        ),
+                        CollectionsState.filtered_collections_for_settings,
+                        collection_row,
                     ),
                 ),
                 class_name="w-full",

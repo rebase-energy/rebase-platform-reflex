@@ -1,5 +1,7 @@
 import reflex as rx
 from app.pages.generic_page import generic_page
+from app.pages.demo_table_view import demo_table_view_page
+from app.pages.demo_timeseries_view import demo_timeseries_view_page
 from app.pages.settings_page import (
     settings_page,
     settings_general_page,
@@ -37,8 +39,8 @@ class RootRedirectState(rx.State):
     
     def on_load(self):
         """Redirect to workspace slug on load."""
-        # Use WorkspaceState to get the current slug
-        return rx.redirect(f"/{WorkspaceState.workspace_slug}")
+        # Use default workspace slug - in future this could be extracted from user context
+        return rx.redirect(f"/{WORKSPACE_SLUG}")
 
 
 def root_redirect() -> rx.Component:
@@ -58,14 +60,14 @@ app.add_page(generic_page, route=f"/{WORKSPACE_SLUG}", on_load=CollectionsState.
 app.add_page(
     generic_page,
     route=f"/{WORKSPACE_SLUG}/collections/[collection_id]",
-    on_load=CollectionsState.on_load,
+    on_load=CollectionsState.on_load_collection_page,
 )
 
 # Entity pages - dynamic route for entity types
 app.add_page(
     generic_page,
     route=f"/{WORKSPACE_SLUG}/entities/[entity_name]",
-    on_load=EntitiesState.on_load,
+    on_load=EntitiesState.on_load_entity_page,
 )
 
 # Menu item pages
@@ -85,3 +87,7 @@ app.add_page(settings_general_page, route=f"/{WORKSPACE_SLUG}/settings/general",
 app.add_page(settings_appearance_page, route=f"/{WORKSPACE_SLUG}/settings/appearance", on_load=CollectionsState.on_load)
 app.add_page(settings_entities_page, route=f"/{WORKSPACE_SLUG}/settings/entities", on_load=CollectionsState.on_load)
 app.add_page(settings_collections_page, route=f"/{WORKSPACE_SLUG}/settings/collections", on_load=CollectionsState.on_load)
+
+# Demo pages - standalone component demos
+app.add_page(demo_table_view_page, route="/demo/table-view", title="Table View Demo")
+app.add_page(demo_timeseries_view_page, route="/demo/timeseries-view", title="Time Series View Demo")

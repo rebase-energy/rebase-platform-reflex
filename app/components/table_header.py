@@ -3,7 +3,7 @@ from app.states.collections import CollectionsState
 
 
 def table_header() -> rx.Component:
-    """Header component with search, sort, and filter buttons (Attio style) for table view."""
+    """Header component with search, sort, and filter buttons for table view."""
     return rx.el.div(
         rx.el.div(
             # Free-form search input
@@ -22,7 +22,7 @@ def table_header() -> rx.Component:
             ),
             # Separator
             rx.el.div(class_name="w-px h-6 bg-gray-700"),
-            # Sort button (Attio style)
+            # Sort button
             rx.el.button(
                 rx.el.div(
                     rx.icon(
@@ -35,7 +35,7 @@ def table_header() -> rx.Component:
                 on_click=CollectionsState.toggle_sort_modal,
                 class_name="flex items-center px-3 py-2 rounded-md border border-dashed border-gray-600 hover:border-gray-500 hover:bg-gray-800/50 transition-colors",
             ),
-            # Filter button (Attio style)
+            # Filter button
             rx.el.button(
                 rx.el.div(
                     rx.icon(

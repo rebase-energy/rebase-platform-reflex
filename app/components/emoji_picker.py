@@ -13,7 +13,7 @@ EMOJI_CATEGORIES = {
 
 
 def emoji_picker() -> rx.Component:
-    """Emoji picker component similar to Attio."""
+    """Emoji picker component."""
     return rx.cond(
         CollectionsState.show_emoji_picker,
         rx.el.div(

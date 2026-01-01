@@ -76,20 +76,12 @@ class EntitiesState(rx.State):
     
     @rx.event
     def on_load_entity_page(self):
-        """Load handler for entity pages - extracts entity_name from route and sets state."""
-        # Clear other selections first
-        from app.states.collections import CollectionsState
-        from app.states.workspace import WorkspaceState
-        CollectionsState.selected_collection_id = ""
-        WorkspaceState.selected_menu_item = ""
-        
-        # Initialize entity storage
+        """Initialize entities and set active entity type from route."""
         if not self._time_series_entities:
             self.on_load()
         
-        # Extract entity_name from route params and convert to object_type
         try:
-            entity_name = self.router._page.params.get("entity_name", "")  # type: ignore[attr-defined]
+            entity_name = self.router.url.params.get("entity_name", "")  # type: ignore[attr-defined]
             if entity_name:
                 entity_type_map = {
                     "timeseries": "TimeSeries",
@@ -99,7 +91,6 @@ class EntitiesState(rx.State):
                 object_type = entity_type_map.get(entity_name.lower(), entity_name)
                 self.selected_object_type = object_type
                 
-                # Load data if needed
                 if object_type == "TimeSeries":
                     self.is_loading = True
                     yield self.load_timeseries_async()
@@ -132,69 +123,48 @@ class EntitiesState(rx.State):
     def time_series_entities_by_collection(self) -> dict[str, list[TimeSeries]]:
         """Get all time series entities organized by collection_id."""
         return self._time_series_entities
-
+    
     @rx.var
-    def route_entity_name(self) -> str:
-        """Get entity_name from the current route (/entities/[entity_name])."""
-        try:
-            return self.router._page.params.get("entity_name", "")  # type: ignore[attr-defined]
-        except Exception:
-            return ""
+    def collection_entry_counts_dict(self) -> dict[str, int]:
+        """Get entry counts for each collection (collection_id -> count)."""
+        return {
+            collection_id: len(entities)
+            for collection_id, entities in self._time_series_entities.items()
+        }
 
     @rx.var
     def active_object_type(self) -> str:
-        """Active entity type (prefer route param, fallback to selected_object_type)."""
-        name = (self.route_entity_name or "").lower()
-        if name == "timeseries":
-            return "TimeSeries"
-        if name == "sites":
-            return "Sites"
-        if name == "assets":
-            return "Assets"
+        """Get the active entity type."""
         return self.selected_object_type
     
     @rx.event
     def select_object_type(self, object_type: str):
-        """Select an object type for entity browsing and navigate to its page."""
+        """Navigate to an entity type page."""
         self.selected_object_type = object_type
-        # Convert entity type to URL-friendly name (e.g., "TimeSeries" -> "timeseries")
         entity_name_map = {
             "TimeSeries": "timeseries",
             "Sites": "sites",
             "Assets": "assets",
         }
         entity_name = entity_name_map.get(object_type, object_type.lower())
-        
-        # Navigate to the entity page
-        from app.states.workspace import WorkspaceState
-        return rx.redirect(f"{WorkspaceState.workspace_base_url}/entities/{entity_name}")
+        workspace_slug = "rebase-energy"
+        return rx.redirect(f"/{workspace_slug}/entities/{entity_name}")
     
     @rx.event
     def load_entity_page(self, object_type: str):
-        """Load an entity page - sets the entity type without redirecting."""
-        # Set selection immediately for instant feedback
+        """Set entity type and load data without redirecting."""
         self.selected_object_type = object_type
         
-        # Clear other selections
-        from app.states.collections import CollectionsState
-        from app.states.workspace import WorkspaceState
-        CollectionsState.selected_collection_id = ""
-        WorkspaceState.selected_menu_item = ""
-        
-        # Load entities from API when selecting TimeSeries object type
         if object_type == "TimeSeries":
             self.is_loading = True
             return self.load_timeseries_async()
         
-        # For other object types, clear loading state
         self.is_loading = False
     
     @rx.event
     def load_timeseries_async(self):
         """Load time series entities asynchronously."""
-        # Yield to allow UI to update with loading state
         yield
-        # Now load the data (this blocks, but UI has already shown loading spinner)
         self._load_timeseries_data()
     
     def _load_timeseries_data(self):
@@ -328,17 +298,16 @@ class EntitiesState(rx.State):
                 "tags": [],  # Can be set later
             }
             
-            # Add to local cache - get collection_id from CollectionsState
-            from app.states.collections import CollectionsState
-            target_collection_id = CollectionsState.selected_collection_id or "default-timeseries"
+            # Add to local cache
+            target_collection_id = "default-timeseries"
             if target_collection_id not in self._time_series_entities:
                 self._time_series_entities[target_collection_id] = []
             self._time_series_entities[target_collection_id].append(new_entity)
             
-            # Close the modal
-            CollectionsState.show_add_item_modal = False
+            # Close modal via CollectionsState event
+            from app.states.collections import CollectionsState
+            yield CollectionsState.close_add_item_modal
             
-            # Refresh the list from API to ensure we have the latest data
             self.refresh_timeseries_entities()
             return rx.toast.success(f"Time series '{name}' created successfully!")
             

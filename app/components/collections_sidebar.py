@@ -3,6 +3,9 @@ from app.states.workspace import WorkspaceState
 from app.states.entities import EntitiesState
 from app.states.collections import CollectionsState
 
+# Default workspace slug - matches WorkspaceState.workspace_slug default
+DEFAULT_WORKSPACE_SLUG = "rebase-energy"
+
 
 def rebase_icon() -> rx.Component:
     """Rebase logo icon."""
@@ -102,10 +105,10 @@ def collapsible_section(
 
 
 def collections_sidebar() -> rx.Component:
-    """Sidebar with Attio-style menu items and collapsible sections: Favorites, Entities, and Collections."""
+    """Sidebar with menu items and collapsible sections: Favorites, Entities, and Collections."""
     return rx.el.aside(
         rx.el.div(
-            # Workspace selector with toggle button (like Attio)
+            # Workspace selector with toggle button
             rx.cond(
                 WorkspaceState.sidebar_collapsed == False,
                 rx.el.div(
@@ -218,11 +221,11 @@ def collections_sidebar() -> rx.Component:
                     class_name="p-3 border-b border-gray-800",
                 ),
             ),
-            # Quick Actions (like Attio) - only when expanded
+            # Quick Actions - only when expanded
             rx.cond(
                 WorkspaceState.sidebar_collapsed == False,
                 rx.el.div(
-                    # Quick Actions (like Attio)
+                    # Quick Actions
                     rx.el.div(
                         rx.el.div(
                             rx.icon("search", class_name="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"),
@@ -242,7 +245,7 @@ def collections_sidebar() -> rx.Component:
             rx.cond(
                 WorkspaceState.sidebar_collapsed == False,
                 rx.el.div(
-                # Top menu items (like Attio) - only show if visible in settings
+                # Top menu items - only show if visible in settings
                 rx.el.div(
                     rx.foreach(
                         WorkspaceState.visible_menu_items,
@@ -255,7 +258,7 @@ def collections_sidebar() -> rx.Component:
                                 ),
                                 class_name="flex items-center",
                             ),
-                            href=f"{WorkspaceState.workspace_base_url}/{item[0].lower()}",
+                            href=f"/{DEFAULT_WORKSPACE_SLUG}/{item[0].lower()}",
                             class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
                         ),
                     ),
@@ -289,7 +292,7 @@ def collections_sidebar() -> rx.Component:
                                 "TimeSeries",
                                 class_name="px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
                             ),
-                            href=f"{WorkspaceState.workspace_base_url}/entities/timeseries",
+                            href=f"/{DEFAULT_WORKSPACE_SLUG}/entities/timeseries",
                             class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
                         ),
                         rx.link(
@@ -298,7 +301,7 @@ def collections_sidebar() -> rx.Component:
                                 "Sites",
                                 class_name="px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
                             ),
-                            href=f"{WorkspaceState.workspace_base_url}/entities/sites",
+                            href=f"/{DEFAULT_WORKSPACE_SLUG}/entities/sites",
                             class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
                         ),
                         rx.link(
@@ -307,7 +310,7 @@ def collections_sidebar() -> rx.Component:
                                 "Assets",
                                 class_name="px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
                             ),
-                            href=f"{WorkspaceState.workspace_base_url}/entities/assets",
+                            href=f"/{DEFAULT_WORKSPACE_SLUG}/entities/assets",
                             class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
                         ),
                         class_name="flex flex-col gap-2",
@@ -335,7 +338,7 @@ def collections_sidebar() -> rx.Component:
                                     ),
                                     class_name="flex items-center",
                                 ),
-                                href=f"{WorkspaceState.workspace_base_url}/collections/{lst['id']}",
+                                href=f"/{DEFAULT_WORKSPACE_SLUG}/collections/{lst['id']}",
                                 class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
                             ),
                         ),

@@ -81,15 +81,9 @@ class CollectionsState(rx.State):
         }
         
         self._collections = [default_collection, esett_collection]
-        if not self.selected_collection_id:
-            self.selected_collection_id = "default-timeseries"
     
     # Selected collection
     selected_collection_id: str = ""
-    
-    # Legacy route storage (older JS-based approach). Kept for backwards compatibility.
-    # New routing reads params from `self.router._page.params` instead.
-    route_collection_id_legacy: str = ""
     
     # Collection UI state
     show_create_collection_modal: bool = False
@@ -136,26 +130,13 @@ class CollectionsState(rx.State):
         return self._collections
 
     @rx.var
-    def route_collection_id_param(self) -> str:
-        """Get collection_id from the current route (/collections/[collection_id])."""
-        try:
-            return self.router._page.params.get("collection_id", "")  # type: ignore[attr-defined]
-        except Exception:
-            return ""
-
-    @rx.var
     def active_collection_id(self) -> str:
-        """The currently active collection id (prefer route param, fallback to state)."""
-        return self.route_collection_id_param or self.selected_collection_id
-    
-    @rx.var
-    def current_route_collection_id(self) -> str:
-        """Get collection_id from current route (route params)."""
-        return self.route_collection_id_param
+        """Get the currently active collection ID."""
+        return self.selected_collection_id
     
     @rx.var
     def active_collection(self) -> CollectionConfig | None:
-        """Get the currently active collection (route-driven)."""
+        """Get the currently active collection."""
         self._initialize_default_collections()
         collection_id = self.active_collection_id
         if not collection_id:
@@ -165,10 +146,9 @@ class CollectionsState(rx.State):
                 return collection
         return None
 
-    # Backwards-compatible aliases used throughout the UI.
     @rx.var
     def selected_collection(self) -> CollectionConfig | None:
-        """Alias for active_collection (route-driven)."""
+        """Alias for active_collection for backward compatibility."""
         return self.active_collection
     
     @rx.var
@@ -181,22 +161,19 @@ class CollectionsState(rx.State):
 
     @rx.var
     def selected_collection_view_type(self) -> str:
-        """Alias for active_collection_view_type (route-driven)."""
+        """Alias for active_collection_view_type for backward compatibility."""
         return self.active_collection_view_type
     
     @rx.var
     def selected_collection_entities(self) -> list[TimeSeries]:
-        """Get entities for the selected collection, with search filter applied."""
+        """Get entities for the selected collection with search filter applied."""
         collection_id = self.active_collection_id
         if not collection_id:
             return []
         
-        # Get entities from EntitiesState - access the underlying dictionary directly
+        # Access entities dictionary directly from EntitiesState
         from app.states.entities import EntitiesState
-        # Access the private attribute directly to avoid Var chaining issues
-        entities_dict = EntitiesState._time_series_entities
-        # Use .get() which returns [] if key doesn't exist (lazy initialization)
-        items = entities_dict.get(collection_id, [])
+        items = EntitiesState._time_series_entities.get(collection_id, [])
         
         # Apply search filter
         if self.collection_search_query:
@@ -211,6 +188,7 @@ class CollectionsState(rx.State):
                 or query in item.get("type", "").lower()
             ]
         return items
+    
     
     @rx.var
     def esett_card_data(self) -> list[dict]:
@@ -312,25 +290,17 @@ class CollectionsState(rx.State):
         """Initialize default collections on app load."""
         self._initialize_default_collections()
         
-        # Entity storage will be initialized lazily when entities are first accessed
-        # This is handled in EntitiesState when entities are loaded
+        # Set default collection only if no collection is selected
+        if not self.selected_collection_id:
+            self.selected_collection_id = "default-timeseries"
     
     @rx.event
     def on_load_collection_page(self):
-        """Load handler for collection pages - extracts collection_id from route and sets state."""
-        # Clear other selections first
-        from app.states.entities import EntitiesState
-        from app.states.workspace import WorkspaceState
-        EntitiesState.selected_object_type = ""
-        EntitiesState.is_loading = False
-        WorkspaceState.selected_menu_item = ""
-        
-        # Initialize collections
+        """Initialize collections and set active collection from route."""
         self._initialize_default_collections()
         
-        # Extract collection_id from route params
         try:
-            collection_id = self.router._page.params.get("collection_id", "")  # type: ignore[attr-defined]
+            collection_id = self.router.url.params.get("collection_id", "")  # type: ignore[attr-defined]
             if collection_id:
                 self.selected_collection_id = collection_id
         except Exception:
@@ -392,9 +362,10 @@ class CollectionsState(rx.State):
     def select_collection(self, collection_id: str):
         """Select a collection and navigate to its page."""
         # Route is the source of truth for what renders. Just navigate.
-        from app.states.workspace import WorkspaceState
         self.selected_collection_id = collection_id
-        return rx.redirect(f"{WorkspaceState.workspace_base_url}/collections/{collection_id}")
+        # Use workspace slug (default value - could be made dynamic in future)
+        workspace_slug = "rebase-energy"
+        return rx.redirect(f"/{workspace_slug}/collections/{collection_id}")
     
     @rx.event
     def load_collection_page(self, collection_id: str):
@@ -412,6 +383,11 @@ class CollectionsState(rx.State):
     def toggle_add_item_modal(self):
         """Toggle the add item modal."""
         self.show_add_item_modal = not self.show_add_item_modal
+    
+    @rx.event
+    def close_add_item_modal(self):
+        """Close the add item modal."""
+        self.show_add_item_modal = False
     
     @rx.event
     def toggle_emoji_picker(self):
@@ -504,35 +480,6 @@ class CollectionsState(rx.State):
             or query in collection.get("created_by", "").lower()
         ]
     
-    @rx.var
-    def filtered_collections_with_entry_counts(self) -> list[dict]:
-        """Get filtered collections with their entry counts included."""
-        # Ensure collections are initialized first
-        self._initialize_default_collections()
-        
-        # Get filtered collections
-        filtered = self.filtered_collections_for_settings
-        
-        # Add entry counts - use the public computed var from EntitiesState
-        result = []
-        try:
-            from app.states.entities import EntitiesState
-            # Use the public computed var instead of accessing private attribute
-            entities_dict = EntitiesState.time_series_entities_by_collection
-        except (AttributeError, ImportError):
-            # If EntitiesState isn't ready, use empty dict
-            entities_dict = {}
-        
-        for collection in filtered:
-            collection_id = collection["id"]
-            collection_with_count = collection.copy()
-            
-            # Get the list of entities for this collection
-            items = entities_dict.get(collection_id, []) if isinstance(entities_dict, dict) else []
-            collection_with_count["entry_count"] = len(items) if isinstance(items, list) else 0
-            
-            result.append(collection_with_count)
-        return result
     
     @rx.event
     def toggle_sort_modal(self):
@@ -558,38 +505,6 @@ class CollectionsState(rx.State):
                     self.column_widths[column_key] = max(50, width)  # Minimum width of 50px
                 except ValueError:
                     pass
-    
-    @rx.var
-    def collection_entry_counts(self) -> dict[str, int]:
-        """Get entry counts for all collections."""
-        from app.states.entities import EntitiesState
-        counts = {}
-        for collection in self._collections:
-            collection_id = collection["id"]
-            # Get entities from EntitiesState
-            entities_dict = EntitiesState._time_series_entities
-            items = entities_dict.get(collection_id, [])
-            counts[collection_id] = len(items)
-        return counts
-    
-    def get_collection_entry_count(self, collection_id: str) -> int:
-        """Get entry count for a specific collection."""
-        counts = self.collection_entry_counts
-        return counts.get(collection_id, 0)
-    
-    @rx.var
-    def collections_with_entry_counts(self) -> list[dict]:
-        """Get collections with their entry counts included."""
-        from app.states.entities import EntitiesState
-        entities_dict = EntitiesState._time_series_entities
-        result = []
-        for collection in self._collections:
-            collection_id = collection["id"]
-            items = entities_dict.get(collection_id, [])
-            collection_with_count = collection.copy()
-            collection_with_count["entry_count"] = len(items)
-            result.append(collection_with_count)
-        return result
     
     @rx.event
     def toggle_collection_favorite(self, collection_id: str):

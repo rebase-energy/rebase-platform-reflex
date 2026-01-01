@@ -29,9 +29,7 @@ class WorkspaceState(rx.State):
     
     @rx.var
     def current_settings_section_from_route(self) -> str:
-        """Get current settings section from route using JavaScript."""
-        # This will be set by JavaScript reading the URL
-        # Default to General if not set
+        """Get current settings section from route."""
         return self.selected_settings_section
     
     # Appearance settings state
@@ -48,6 +46,51 @@ class WorkspaceState(rx.State):
         "Notifications": True,
         "Reports": True,
     }
+    
+    @rx.var
+    def current_path(self) -> str:
+        """Get current URL path."""
+        try:
+            return self.router.url.path  # type: ignore[attr-defined]
+        except Exception:
+            return f"/{self.workspace_slug}"
+    
+    @rx.var
+    def is_entity_route(self) -> bool:
+        """Check if on an entity route."""
+        path = self.current_path
+        return path.startswith(f"/{self.workspace_slug}/entities/")
+    
+    @rx.var
+    def is_collection_route(self) -> bool:
+        """Check if on a collection route."""
+        path = self.current_path
+        return path.startswith(f"/{self.workspace_slug}/collections/")
+    
+    @rx.var
+    def is_menu_route(self) -> bool:
+        """Check if on a menu item route."""
+        path = self.current_path
+        menu_routes = [
+            f"/{self.workspace_slug}/projects",
+            f"/{self.workspace_slug}/workflows",
+            f"/{self.workspace_slug}/dashboards",
+            f"/{self.workspace_slug}/notebooks",
+            f"/{self.workspace_slug}/models",
+            f"/{self.workspace_slug}/datasets",
+            f"/{self.workspace_slug}/notifications",
+            f"/{self.workspace_slug}/reports",
+        ]
+        return path in menu_routes
+    
+    @rx.var
+    def current_menu_item_name(self) -> str:
+        """Extract menu item name from current route."""
+        if self.is_menu_route:
+            parts = self.current_path.split("/")
+            if len(parts) >= 3:
+                return parts[2].capitalize()
+        return ""
     
     @rx.var
     def workspace_base_url(self) -> str:
@@ -137,16 +180,8 @@ class WorkspaceState(rx.State):
     
     @rx.event
     def select_menu_item(self, menu_item: str):
-        """Select a menu item (Projects, Workflows, etc.)."""
-        # Set selection immediately for instant feedback
+        """Set the selected menu item."""
         self.selected_menu_item = menu_item
-        
-        # Clear other selections
-        from app.states.entities import EntitiesState
-        from app.states.collections import CollectionsState
-        EntitiesState.selected_object_type = ""
-        CollectionsState.selected_collection_id = ""
-        EntitiesState.is_loading = False
     
     @rx.event
     def toggle_workspace_dropdown(self):
@@ -162,7 +197,7 @@ class WorkspaceState(rx.State):
     def navigate_to_settings(self):
         """Navigate to settings page."""
         self.workspace_dropdown_open = False
-        return rx.redirect(f"{self.workspace_base_url}/settings")
+        return rx.redirect(f"/{self.workspace_slug}/settings")
     
     @rx.event
     def set_workspace_name(self, name: str):
