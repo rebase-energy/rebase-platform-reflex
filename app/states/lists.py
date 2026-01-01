@@ -89,6 +89,27 @@ class ListsState(rx.State):
     # Column layout for timeseries card grid (1 or 2 columns)
     timeseries_card_columns: int = 2
     
+    # Workspace dropdown state
+    workspace_dropdown_open: bool = False
+    
+    # Settings page state
+    selected_settings_section: str = "General"
+    
+    # Appearance settings state
+    theme: str = "Dark"  # "Light", "Dark", or "System"
+    accent_color: str = "#10b981"  # Default green
+    custom_accent_color: str = ""
+    menu_item_visibility: dict[str, bool] = {
+        "Projects": True,
+        "Workflows": True,
+        "Dashboards": True,
+        "Notebooks": True,
+        "Models": True,
+        "Datasets": True,
+        "Notifications": True,
+        "Reports": True,
+    }
+    
     # Default column widths
     _default_column_widths = {
         "name": 200,
@@ -290,64 +311,8 @@ class ListsState(rx.State):
         self._lists = [default_list, esett_list]
         self.selected_list_id = "default-timeseries"
         self._time_series_items["esett-data"] = []  # Initialize empty for now
-        
-        # Load time series from API
-        try:
-            api = TimeDBAPI(api_key=self.timedb_api_key if self.timedb_api_key else None)
-            timeseries_map = api.list_timeseries()
-            
-            # Convert API response to TimeSeries items
-            # API returns dict: {series_id: series_key} or {series_id: {series_key: ..., metadata: ...}}
-            items: list[TimeSeries] = []
-            for series_id, value in timeseries_map.items():
-                # Handle different response formats
-                if isinstance(value, dict):
-                    # If value is a dict, extract series_key and metadata
-                    series_key = value.get("series_key", str(series_id))
-                    metadata = value.get("metadata", {})
-                    
-                    # Extract name, description, and unit from metadata (or top-level if available)
-                    # Priority: metadata fields > top-level fields > fallback
-                    name = (
-                        metadata.get("name") or 
-                        value.get("name") or 
-                        series_key.replace("_", " ").title()
-                    )
-                    description = (
-                        metadata.get("description") or 
-                        value.get("description") or 
-                        ""
-                    )
-                    unit = (
-                        metadata.get("unit") or 
-                        value.get("unit") or 
-                        "kW"
-                    )
-                else:
-                    # If value is a string (series_key)
-                    series_key = str(value)
-                    name = series_key.replace("_", " ").title()
-                    description = ""
-                    unit = "kW"
-                
-                item: TimeSeries = {
-                    "id": series_id,
-                    "name": name,
-                    "description": description,
-                    "unit": unit,
-                    "site_name": "",
-                    "timestamp": datetime.now().isoformat(),
-                    "value": 0.0,
-                    "type": "actual",
-                    "tags": [],
-                }
-                items.append(item)
-            
-            self._time_series_items["default-timeseries"] = items
-        except Exception as e:
-            # If API fails, use empty list
-            print(f"Failed to load time series from API: {e}")
-            self._time_series_items["default-timeseries"] = []
+        # Don't load data on startup - load it lazily when needed
+        self._time_series_items["default-timeseries"] = []
 
     @rx.event
     def create_list(self, form_data: dict):
@@ -400,7 +365,17 @@ class ListsState(rx.State):
         self.selected_list_id = list_id
         self.selected_object_type = ""  # Clear object selection when selecting list
         self.selected_menu_item = ""  # Clear menu item selection when selecting list
-        self.is_loading = False  # Clear loading state
+        
+        # Load data lazily if this list needs it and doesn't have it yet
+        if list_id == "default-timeseries":
+            existing_items = self._time_series_items.get(list_id, [])
+            if not existing_items:
+                # Only load if the list is empty (hasn't been loaded yet)
+                self.is_loading = True
+                return self.load_timeseries_async()
+        
+        self.is_loading = False
+        return None
 
     @rx.event
     def toggle_create_list_modal(self):
@@ -442,6 +417,88 @@ class ListsState(rx.State):
     def toggle_timeseries_card_columns(self):
         """Toggle between 1 and 2 columns for timeseries card grid."""
         self.timeseries_card_columns = 1 if self.timeseries_card_columns == 2 else 2
+    
+    @rx.event
+    def toggle_workspace_dropdown(self):
+        """Toggle the workspace dropdown menu."""
+        self.workspace_dropdown_open = not self.workspace_dropdown_open
+    
+    @rx.event
+    def close_workspace_dropdown(self):
+        """Close the workspace dropdown menu."""
+        self.workspace_dropdown_open = False
+    
+    @rx.event
+    def navigate_to_settings(self):
+        """Navigate to settings page."""
+        self.workspace_dropdown_open = False
+        return rx.redirect("/settings")
+    
+    @rx.event
+    def select_settings_section(self, section: str):
+        """Select a settings section."""
+        self.selected_settings_section = section
+    
+    @rx.event
+    def set_theme(self, theme: str):
+        """Set the theme (Light, Dark, or System)."""
+        self.theme = theme
+    
+    @rx.event
+    def set_accent_color(self, color: str):
+        """Set the accent color."""
+        self.accent_color = color
+        self.custom_accent_color = ""  # Clear custom color when selecting a preset
+    
+    @rx.event
+    def set_custom_accent_color(self, color: str):
+        """Set a custom accent color from hex input."""
+        # Validate hex color format
+        if color and (color.startswith("#") and len(color) == 7):
+            self.accent_color = color
+            self.custom_accent_color = color
+    
+    @rx.event
+    def toggle_menu_item_visibility(self, menu_item: str):
+        """Toggle visibility of a menu item."""
+        if menu_item in self.menu_item_visibility:
+            self.menu_item_visibility[menu_item] = not self.menu_item_visibility[menu_item]
+    
+    @rx.var
+    def visible_menu_items(self) -> list[tuple[str, str]]:
+        """Get list of visible menu items as (name, icon) tuples."""
+        all_items = [
+            ("Projects", "folder"),
+            ("Workflows", "git-branch"),
+            ("Dashboards", "layout-dashboard"),
+            ("Notebooks", "book"),
+            ("Models", "brain"),
+            ("Datasets", "database"),
+            ("Notifications", "bell"),
+            ("Reports", "bar-chart"),
+        ]
+        return [
+            item for item in all_items
+            if self.menu_item_visibility.get(item[0], True)
+        ]
+    
+    @rx.var
+    def menu_items_with_visibility(self) -> list[tuple[str, str, bool]]:
+        """Get list of menu items with their visibility status as (name, icon, visible) tuples."""
+        all_items = [
+            ("Projects", "folder"),
+            ("Workflows", "git-branch"),
+            ("Dashboards", "layout-dashboard"),
+            ("Notebooks", "book"),
+            ("Models", "brain"),
+            ("Datasets", "database"),
+            ("Notifications", "bell"),
+            ("Reports", "bar-chart"),
+        ]
+        return [
+            (item[0], item[1], self.menu_item_visibility.get(item[0], True))
+            for item in all_items
+        ]
     
     @rx.event
     def set_emoji_category(self, category: str):

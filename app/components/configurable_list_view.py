@@ -654,7 +654,7 @@ def configurable_list_view() -> rx.Component:
                         class_name="mb-4",
                     ),
                     # Cards grid
-                    timeseries_card_grid_view(ListsState.esett_card_data),
+                timeseries_card_grid_view(ListsState.esett_card_data),
                     class_name="",
                 ),
                 # Default table view

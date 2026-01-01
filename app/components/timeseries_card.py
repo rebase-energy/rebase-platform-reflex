@@ -162,7 +162,7 @@ def _build_chart_option(chart_data: dict) -> dict:
             "orient": "horizontal",
             "itemGap": 16,
             "textStyle": {
-                "color": "#9ca3af",
+                    "color": "#9ca3af",
                 "fontSize": 10,
             },
             "selectedMode": True,  # Enable clicking to toggle series
@@ -180,7 +180,7 @@ def _build_chart_option(chart_data: dict) -> dict:
             ],
             "itemWidth": 10,
             "itemHeight": 10,
-        },
+            },
         "animation": False,
         "series": [
             {
@@ -238,19 +238,19 @@ def timeseries_card(card_data: TimeSeriesCardData) -> rx.Component:
     
     return rx.el.div(
         # Card header with title
-        rx.el.div(
-            rx.el.h3(
-                card_data["name"],
-                class_name="text-white font-bold text-lg",
+            rx.el.div(
+                rx.el.h3(
+                    card_data["name"],
+                    class_name="text-white font-bold text-lg",
             ),
             class_name="p-4 border-b border-gray-700",
         ),
         # Chart area with built-in legend
         rx.el.div(
             rx.el.div(
-                echarts(
-                    option=option,
-                    style={"height": "250px", "width": "100%"},
+            echarts(
+                option=option,
+                style={"height": "250px", "width": "100%"},
                     id=f"chart-{card_data['id']}",
                 ),
                 rx.el.script(

@@ -80,13 +80,13 @@ def card_chart(site: Site) -> rx.Component:
             ),
             rx.cond(
                 capacity_visible,
-                rx.recharts.line(
-                    data_key="capacity",
-                    type_="monotone",
-                    stroke="#6b7280",
-                    stroke_width=2,
-                    stroke_dasharray="5 5",
-                    dot=False,
+            rx.recharts.line(
+                data_key="capacity",
+                type_="monotone",
+                stroke="#6b7280",
+                stroke_width=2,
+                stroke_dasharray="5 5",
+                dot=False,
                 ),
                 rx.fragment(),
             ),

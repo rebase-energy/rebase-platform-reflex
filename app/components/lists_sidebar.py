@@ -108,21 +108,101 @@ def lists_sidebar() -> rx.Component:
                 ListsState.sidebar_collapsed == False,
                 rx.el.div(
                     rx.el.div(
-                        rx.el.div(
-                            rebase_icon(),
-                            rx.el.span(
-                                "rebase-energy",
-                                class_name="text-white text-sm font-medium",
+                        # Workspace selector button
+                        rx.el.button(
+                            rx.el.div(
+                                rebase_icon(),
+                                rx.el.span(
+                                    "rebase-energy",
+                                    class_name="text-white text-sm font-medium",
+                                ),
+                                rx.icon("chevron-down", class_name="h-4 w-4 text-gray-400 ml-2"),
+                                rx.el.button(
+                                    rx.icon("panel-left", class_name="h-4 w-4 text-gray-400"),
+                                    on_click=ListsState.toggle_sidebar,
+                                    class_name="ml-auto p-1 hover:bg-gray-800/30 rounded transition-colors",
+                                ),
+                                class_name="flex items-center w-full",
                             ),
-                            rx.icon("chevron-down", class_name="h-4 w-4 text-gray-400 ml-2"),
-                            rx.el.button(
-                                rx.icon("panel-left", class_name="h-4 w-4 text-gray-400"),
-                                on_click=ListsState.toggle_sidebar,
-                                class_name="ml-auto p-1 hover:bg-gray-800/30 rounded transition-colors",
-                            ),
-                            class_name="flex items-center w-full",
+                            on_click=ListsState.toggle_workspace_dropdown,
+                            class_name="w-full px-3 py-2 hover:bg-gray-800/30 rounded-md text-left",
+                            id="workspace-selector-button",
                         ),
-                        class_name="px-3 py-2 hover:bg-gray-800/30 rounded-md",
+                        # Dropdown menu
+                        rx.cond(
+                            ListsState.workspace_dropdown_open,
+                            rx.el.div(
+                                rx.el.script(
+                                    """
+                                    (function() {
+                                        const button = document.getElementById('workspace-selector-button');
+                                        const dropdown = document.getElementById('workspace-dropdown');
+                                        if (button && dropdown) {
+                                            const rect = button.getBoundingClientRect();
+                                            dropdown.style.position = 'fixed';
+                                            dropdown.style.top = (rect.bottom + 4) + 'px';
+                                            dropdown.style.left = (rect.left - 8) + 'px';
+                                        }
+                                    })();
+                                    """,
+                                ),
+                                rx.el.button(
+                                    rx.el.div(
+                                        rx.icon("plus", class_name="h-4 w-4 text-gray-400 mr-2"),
+                                        rx.el.span(
+                                            "New workspace",
+                                            class_name="text-gray-300 text-sm",
+                                        ),
+                                        class_name="flex items-center",
+                                    ),
+                                    on_click=ListsState.close_workspace_dropdown,
+                                    class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/50 rounded-md text-left transition-colors",
+                                ),
+                                rx.el.button(
+                                    rx.el.div(
+                                        rx.icon("settings", class_name="h-4 w-4 text-gray-400 mr-2"),
+                                        rx.el.span(
+                                            "Settings",
+                                            class_name="text-gray-300 text-sm",
+                                        ),
+                                        class_name="flex items-center",
+                                    ),
+                                    on_click=ListsState.navigate_to_settings,
+                                    class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/50 rounded-md text-left transition-colors",
+                                ),
+                                rx.el.button(
+                                    rx.el.div(
+                                        rx.icon("user-plus", class_name="h-4 w-4 text-gray-400 mr-2"),
+                                        rx.el.span(
+                                            "Invite team members",
+                                            class_name="text-gray-300 text-sm",
+                                        ),
+                                        class_name="flex items-center",
+                                    ),
+                                    on_click=ListsState.close_workspace_dropdown,
+                                    class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/50 rounded-md text-left transition-colors",
+                                ),
+                                rx.el.button(
+                                    rx.el.div(
+                                        rx.icon("layout-grid", class_name="h-4 w-4 text-gray-400 mr-2"),
+                                        rx.el.span(
+                                            "Integrations",
+                                            class_name="text-gray-300 text-sm",
+                                        ),
+                                        class_name="flex items-center",
+                                    ),
+                                    on_click=ListsState.close_workspace_dropdown,
+                                    class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/50 rounded-md text-left transition-colors",
+                                ),
+                                class_name="w-64 bg-gray-900 border border-gray-800 rounded-lg shadow-lg p-1",
+                                style={
+                                    "backgroundColor": "rgb(23, 23, 25)",
+                                    "zIndex": 9999,
+                                },
+                                id="workspace-dropdown",
+                            ),
+                        ),
+                        class_name="relative",
                     ),
                     class_name="p-3 border-b border-gray-800",
                 ),
@@ -160,16 +240,12 @@ def lists_sidebar() -> rx.Component:
             rx.cond(
                 ListsState.sidebar_collapsed == False,
                 rx.el.div(
-                # Top menu items (like Attio)
+                # Top menu items (like Attio) - only show if visible in settings
                 rx.el.div(
-                    menu_item("Projects", "folder", ListsState.select_menu_item("Projects")),
-                    menu_item("Workflows", "git-branch", ListsState.select_menu_item("Workflows")),
-                    menu_item("Dashboards", "layout-dashboard", ListsState.select_menu_item("Dashboards")),
-                    menu_item("Notebooks", "book", ListsState.select_menu_item("Notebooks")),
-                    menu_item("Models", "brain", ListsState.select_menu_item("Models")),
-                    menu_item("Datasets", "database", ListsState.select_menu_item("Datasets")),
-                    menu_item("Notifications", "bell", ListsState.select_menu_item("Notifications")),
-                    menu_item("Reports", "bar-chart", ListsState.select_menu_item("Reports")),
+                    rx.foreach(
+                        ListsState.visible_menu_items,
+                        lambda item: menu_item(item[0], item[1], ListsState.select_menu_item(item[0])),
+                    ),
                     class_name="px-2 mb-4 space-y-0.5",
                 ),
                 # Favorites section

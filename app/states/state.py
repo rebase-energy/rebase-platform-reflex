@@ -17,7 +17,7 @@ class DashboardState(rx.State):
     _sites: list[Site] = []
     search_query: str = ""
     show_add_site_modal: bool = False
-    
+
     # Chart legend visibility state (site_name -> {series_name: visible})
     chart_legend_visibility: dict[str, dict[str, bool]] = {}
 

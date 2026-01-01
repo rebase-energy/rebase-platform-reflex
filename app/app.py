@@ -1,5 +1,6 @@
 import reflex as rx
 from app.pages.lists_page import lists_page
+from app.pages.settings_page import settings_page
 from app.states.lists import ListsState
 
 
@@ -19,3 +20,6 @@ app = rx.App(
 
 # Main index route - lists page
 app.add_page(lists_page, route="/", on_load=ListsState.on_load)
+
+# Settings page
+app.add_page(settings_page, route="/settings")
