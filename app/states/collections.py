@@ -33,10 +33,17 @@ class CollectionsState(rx.State):
     # Collections storage - initialize with default collections for immediate availability
     _collections: list[CollectionConfig] = []
     
+    # Track if collections have been loaded from DB
+    _collections_loaded: bool = False
+    
     def _initialize_default_collections(self):
         """Initialize default collections if not already initialized."""
         if len(self._collections) > 0:
             return  # Already initialized
+        
+        # Try to load from Supabase first
+        if self._load_collections_from_db():
+            return
         
         from datetime import datetime
         # Initialize with a default TimeSeries collection
@@ -81,6 +88,128 @@ class CollectionsState(rx.State):
         }
         
         self._collections = [default_collection, esett_collection]
+        
+        # Save default collections to Supabase
+        self._save_collections_to_db()
+    
+    def _load_collections_from_db(self) -> bool:
+        """Load collections from Supabase. Returns True if collections were loaded."""
+        if self._collections_loaded:
+            return len(self._collections) > 0
+        
+        try:
+            from app.services.supabase_service import SupabaseService
+            from app.states.workspace import WorkspaceState
+            
+            # Get workspace ID (use default slug if workspace not loaded yet)
+            workspace = SupabaseService.get_workspace("rebase-energy")
+            if not workspace:
+                self._collections_loaded = True
+                return False
+            
+            workspace_id = workspace.get("id", "")
+            if not workspace_id:
+                self._collections_loaded = True
+                return False
+            
+            # Load collections for this workspace
+            db_collections = SupabaseService.get_collections(workspace_id)
+            if db_collections:
+                # Convert DB format to CollectionConfig
+                self._collections = []
+                for db_col in db_collections:
+                    collection: CollectionConfig = {
+                        "id": db_col.get("id", ""),
+                        "name": db_col.get("name", ""),
+                        "object_type": db_col.get("object_type", "TimeSeries"),
+                        "attributes": db_col.get("attributes", []),
+                        "created_at": db_col.get("created_at", ""),
+                        "emoji": db_col.get("emoji", "📋"),
+                        "view_type": db_col.get("view_type", "table"),
+                        "created_by": db_col.get("created_by", ""),
+                        "is_favorite": db_col.get("is_favorite", False),
+                        "is_default": db_col.get("is_default", False),
+                    }
+                    self._collections.append(collection)
+                self._collections_loaded = True
+                return True
+            
+            self._collections_loaded = True
+            return False
+        except Exception as e:
+            print(f"Failed to load collections from database: {e}")
+            self._collections_loaded = True
+            return False
+    
+    def _save_collections_to_db(self):
+        """Save all collections to Supabase."""
+        try:
+            from app.services.supabase_service import SupabaseService
+            
+            # Get workspace
+            workspace = SupabaseService.get_workspace("rebase-energy")
+            if not workspace:
+                return
+            
+            workspace_id = workspace.get("id", "")
+            if not workspace_id:
+                return
+            
+            # Save each collection
+            for collection in self._collections:
+                data = {
+                    "workspace_id": workspace_id,
+                    "name": collection.get("name", ""),
+                    "object_type": collection.get("object_type", "TimeSeries"),
+                    "attributes": collection.get("attributes", []),
+                    "emoji": collection.get("emoji", "📋"),
+                    "view_type": collection.get("view_type", "table"),
+                    "created_by": collection.get("created_by", ""),
+                    "is_favorite": collection.get("is_favorite", False),
+                    "is_default": collection.get("is_default", False),
+                }
+                SupabaseService.upsert_collection(collection.get("id", ""), data)
+        except Exception as e:
+            print(f"Failed to save collections to database: {e}")
+    
+    def _save_collection_to_db(self, collection_id: str):
+        """Save a single collection to Supabase."""
+        try:
+            from app.services.supabase_service import SupabaseService
+            
+            # Find the collection
+            collection = None
+            for col in self._collections:
+                if col.get("id") == collection_id:
+                    collection = col
+                    break
+            
+            if not collection:
+                return
+            
+            # Get workspace
+            workspace = SupabaseService.get_workspace("rebase-energy")
+            if not workspace:
+                return
+            
+            workspace_id = workspace.get("id", "")
+            if not workspace_id:
+                return
+            
+            data = {
+                "workspace_id": workspace_id,
+                "name": collection.get("name", ""),
+                "object_type": collection.get("object_type", "TimeSeries"),
+                "attributes": collection.get("attributes", []),
+                "emoji": collection.get("emoji", "📋"),
+                "view_type": collection.get("view_type", "table"),
+                "created_by": collection.get("created_by", ""),
+                "is_favorite": collection.get("is_favorite", False),
+                "is_default": collection.get("is_default", False),
+            }
+            SupabaseService.upsert_collection(collection_id, data)
+        except Exception as e:
+            print(f"Failed to save collection to database: {e}")
     
     # Selected collection
     selected_collection_id: str = ""
@@ -128,7 +257,7 @@ class CollectionsState(rx.State):
         # Ensure collections are initialized
         self._initialize_default_collections()
         return self._collections
-
+    
     @rx.var
     def active_collection_id(self) -> str:
         """Get the currently active collection ID."""
@@ -145,7 +274,7 @@ class CollectionsState(rx.State):
             if collection["id"] == collection_id:
                 return collection
         return None
-
+    
     @rx.var
     def selected_collection(self) -> CollectionConfig | None:
         """Alias for active_collection for backward compatibility."""
@@ -158,7 +287,7 @@ class CollectionsState(rx.State):
         if not collection:
             return "table"
         return collection.get("view_type", "table")
-
+    
     @rx.var
     def selected_collection_view_type(self) -> str:
         """Alias for active_collection_view_type for backward compatibility."""
@@ -202,6 +331,8 @@ class CollectionsState(rx.State):
         locations = [
             {"name": "Blackfjället", "capacity": 90.2},
             {"name": "Ranasjo", "capacity": 150.0},
+            {"name": "Storberget", "capacity": 75.5},
+            {"name": "Vindpark Nord", "capacity": 200.0},
         ]
         
         for loc in locations:
@@ -299,12 +430,25 @@ class CollectionsState(rx.State):
         """Initialize collections and set active collection from route."""
         self._initialize_default_collections()
         
+        # Get collection_id from URL params
         try:
             collection_id = self.router.url.params.get("collection_id", "")  # type: ignore[attr-defined]
-            if collection_id:
-                self.selected_collection_id = collection_id
         except Exception:
-            pass
+            collection_id = ""
+        
+        # Always set the collection from URL (overriding any previous selection)
+        if collection_id:
+            self.selected_collection_id = collection_id
+        else:
+            # Fallback: try to extract from path
+            try:
+                path = self.router.url.path  # type: ignore[attr-defined]
+                if "/collections/" in path:
+                    parts = path.split("/collections/")
+                    if len(parts) > 1:
+                        self.selected_collection_id = parts[1].split("/")[0]
+            except Exception:
+                pass
     
     @rx.event
     def create_collection(self, form_data: dict):
@@ -332,6 +476,9 @@ class CollectionsState(rx.State):
         
         self._collections.append(new_collection)
         self.selected_collection_id = collection_id
+        
+        # Save to database
+        self._save_collection_to_db(collection_id)
         
         # Initialize empty entity storage for this collection
         # This will be handled by EntitiesState when entities are first accessed
@@ -429,6 +576,10 @@ class CollectionsState(rx.State):
                 updated_collection["emoji"] = emoji
                 self._collections[i] = updated_collection
                 break
+        
+        # Save to database
+        self._save_collection_to_db(self.selected_collection_id)
+        
         self.show_emoji_picker = False
         return rx.toast.success(f"Emoji updated!")
     
@@ -515,6 +666,9 @@ class CollectionsState(rx.State):
                 updated_collection["is_favorite"] = not collection.get("is_favorite", False)
                 self._collections[i] = updated_collection
                 break
+        
+        # Save to database
+        self._save_collection_to_db(collection_id)
     
     @rx.event
     def set_default_collection(self, collection_id: str):
@@ -525,6 +679,8 @@ class CollectionsState(rx.State):
                 updated_collection = collection.copy()
                 updated_collection["is_default"] = False
                 self._collections[i] = updated_collection
+                # Save to database
+                self._save_collection_to_db(collection.get("id", ""))
         
         # Then set the selected collection as default
         for i, collection in enumerate(self._collections):
@@ -533,4 +689,7 @@ class CollectionsState(rx.State):
                 updated_collection["is_default"] = True
                 self._collections[i] = updated_collection
                 break
+        
+        # Save the new default collection to database
+        self._save_collection_to_db(collection_id)
 

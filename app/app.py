@@ -39,6 +39,8 @@ class RootRedirectState(rx.State):
     
     def on_load(self):
         """Redirect to workspace slug on load."""
+        # Load workspace from database
+        yield WorkspaceState.load_workspace_from_db
         # Use default workspace slug - in future this could be extracted from user context
         return rx.redirect(f"/{WORKSPACE_SLUG}")
 
@@ -54,20 +56,20 @@ def root_redirect() -> rx.Component:
 app.add_page(root_redirect, route="/", on_load=RootRedirectState.on_load)
 
 # Main index route - collections home page
-app.add_page(generic_page, route=f"/{WORKSPACE_SLUG}", on_load=CollectionsState.on_load)
+app.add_page(generic_page, route=f"/{WORKSPACE_SLUG}", on_load=[WorkspaceState.load_workspace_from_db, CollectionsState.on_load])
 
 # Collection pages - dynamic route for individual collections
 app.add_page(
     generic_page,
     route=f"/{WORKSPACE_SLUG}/collections/[collection_id]",
-    on_load=CollectionsState.on_load_collection_page,
+    on_load=[WorkspaceState.load_workspace_from_db, CollectionsState.on_load_collection_page],
 )
 
 # Entity pages - dynamic route for entity types
 app.add_page(
     generic_page,
     route=f"/{WORKSPACE_SLUG}/entities/[entity_name]",
-    on_load=EntitiesState.on_load_entity_page,
+    on_load=[WorkspaceState.load_workspace_from_db, EntitiesState.on_load_entity_page],
 )
 
 # Menu item pages
@@ -81,12 +83,12 @@ app.add_page(generic_page, route=f"/{WORKSPACE_SLUG}/notifications")
 app.add_page(generic_page, route=f"/{WORKSPACE_SLUG}/reports")
 
 # Settings pages - redirect /settings to /settings/general
-# Initialize collections on settings pages too for faster loading
-app.add_page(settings_general_page, route=f"/{WORKSPACE_SLUG}/settings", on_load=CollectionsState.on_load)
-app.add_page(settings_general_page, route=f"/{WORKSPACE_SLUG}/settings/general", on_load=CollectionsState.on_load)
-app.add_page(settings_appearance_page, route=f"/{WORKSPACE_SLUG}/settings/appearance", on_load=CollectionsState.on_load)
-app.add_page(settings_entities_page, route=f"/{WORKSPACE_SLUG}/settings/entities", on_load=CollectionsState.on_load)
-app.add_page(settings_collections_page, route=f"/{WORKSPACE_SLUG}/settings/collections", on_load=CollectionsState.on_load)
+# Initialize workspace and collections on settings pages
+app.add_page(settings_general_page, route=f"/{WORKSPACE_SLUG}/settings", on_load=[WorkspaceState.load_workspace_from_db, CollectionsState.on_load])
+app.add_page(settings_general_page, route=f"/{WORKSPACE_SLUG}/settings/general", on_load=[WorkspaceState.load_workspace_from_db, CollectionsState.on_load])
+app.add_page(settings_appearance_page, route=f"/{WORKSPACE_SLUG}/settings/appearance", on_load=[WorkspaceState.load_workspace_from_db, CollectionsState.on_load])
+app.add_page(settings_entities_page, route=f"/{WORKSPACE_SLUG}/settings/entities", on_load=[WorkspaceState.load_workspace_from_db, CollectionsState.on_load])
+app.add_page(settings_collections_page, route=f"/{WORKSPACE_SLUG}/settings/collections", on_load=[WorkspaceState.load_workspace_from_db, CollectionsState.on_load])
 
 # Demo pages - standalone component demos
 app.add_page(demo_table_view_page, route="/demo/table-view", title="Table View Demo")

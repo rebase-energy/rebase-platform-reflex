@@ -64,6 +64,7 @@ def create_collection_modal() -> rx.Component:
                     ),
                     class_name="rounded-lg p-6 max-w-md w-full mx-4",
                     style={"backgroundColor": "rgb(23, 23, 25)"},  # Component background
+                    on_click=rx.stop_propagation,  # Prevent clicks from bubbling to overlay
                 ),
                 class_name="fixed inset-0 flex items-center justify-center z-50",
                 style={"backgroundColor": "rgba(16, 16, 18, 0.8)"},  # Overlay with lowest level background

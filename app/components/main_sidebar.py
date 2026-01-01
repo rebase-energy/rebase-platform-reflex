@@ -1,3 +1,4 @@
+"""Main sidebar component with menu items and collapsible sections."""
 import reflex as rx
 from app.states.workspace import WorkspaceState
 from app.states.entities import EntitiesState
@@ -11,7 +12,7 @@ def rebase_icon() -> rx.Component:
     """Rebase logo icon."""
     return rx.el.img(
         src="/logo.png",
-        alt="Rebase",
+        alt="rebase-energy",
         class_name="w-6 h-6 mr-2 flex-shrink-0",
     )
 
@@ -104,8 +105,8 @@ def collapsible_section(
     )
 
 
-def collections_sidebar() -> rx.Component:
-    """Sidebar with menu items and collapsible sections: Favorites, Entities, and Collections."""
+def main_sidebar() -> rx.Component:
+    """Main sidebar with menu items and collapsible sections: Favorites, Entities, and Collections."""
     return rx.el.aside(
         rx.el.div(
             # Workspace selector with toggle button
@@ -232,7 +233,7 @@ def collections_sidebar() -> rx.Component:
                             rx.el.input(
                                 placeholder="Quick actions",
                                 class_name="w-full border border-gray-700/50 pl-9 pr-3 py-2 rounded-md text-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
-                                style={"backgroundColor": "rgb(23, 23, 25)"},  # Component background
+                                style={"backgroundColor": "rgb(23, 23, 25)"},
                             ),
                             class_name="relative mb-4",
                         ),
@@ -270,7 +271,7 @@ def collections_sidebar() -> rx.Component:
                     icon_name="star",
                     is_expanded=WorkspaceState.favorites_expanded,
                     toggle_handler=WorkspaceState.toggle_favorites,
-                    add_handler=CollectionsState.toggle_create_collection_modal,  # Placeholder
+                    add_handler=CollectionsState.toggle_create_collection_modal,
                     children=rx.el.div(
                         rx.el.span(
                             "No favorites yet",
@@ -278,13 +279,13 @@ def collections_sidebar() -> rx.Component:
                         ),
                     ),
                 ),
-                # Entities section (renamed from Objects)
+                # Entities section
                 collapsible_section(
                     title="Entities",
                     icon_name="database",
                     is_expanded=WorkspaceState.objects_expanded,
                     toggle_handler=WorkspaceState.toggle_objects,
-                    add_handler=CollectionsState.toggle_create_collection_modal,  # Placeholder
+                    add_handler=CollectionsState.toggle_create_collection_modal,
                     children=rx.el.div(
                         rx.link(
                             rx.icon("building", class_name="h-4 w-4 text-gray-400 mr-2"),

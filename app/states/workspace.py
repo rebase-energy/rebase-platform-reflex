@@ -5,6 +5,9 @@ import reflex as rx
 class WorkspaceState(rx.State):
     """State management for workspace UI, navigation, and settings."""
     
+    # Database ID (set after loading from Supabase)
+    workspace_id: str = ""
+    
     # Workspace configuration
     workspace_name: str = "rebase-energy"
     workspace_slug: str = "rebase-energy"
@@ -26,6 +29,9 @@ class WorkspaceState(rx.State):
     
     # Settings page state
     selected_settings_section: str = "General"
+    
+    # Loading/sync state
+    _workspace_loaded: bool = False
     
     @rx.var
     def current_settings_section_from_route(self) -> str:
@@ -152,6 +158,7 @@ class WorkspaceState(rx.State):
     def toggle_sidebar(self):
         """Toggle sidebar collapsed state."""
         self.sidebar_collapsed = not self.sidebar_collapsed
+        self._save_workspace_to_db()
     
     @rx.event
     def set_sidebar_width(self, width: str):
@@ -160,6 +167,7 @@ class WorkspaceState(rx.State):
             width_int = int(width)
             # Clamp width between 200px and 600px
             self.sidebar_width = max(200, min(600, width_int))
+            self._save_workspace_to_db()
         except ValueError:
             pass
     
@@ -205,6 +213,7 @@ class WorkspaceState(rx.State):
         self.workspace_name = name
         # Update slug (convert to lowercase, replace spaces with hyphens)
         self.workspace_slug = name.lower().replace(" ", "-").replace("_", "-")
+        self._save_workspace_to_db()
     
     @rx.event
     def select_settings_section(self, section: str):
@@ -215,12 +224,14 @@ class WorkspaceState(rx.State):
     def set_theme(self, theme: str):
         """Set the theme (Light, Dark, or System)."""
         self.theme = theme
+        self._save_workspace_to_db()
     
     @rx.event
     def set_accent_color(self, color: str):
         """Set the accent color."""
         self.accent_color = color
         self.custom_accent_color = ""  # Clear custom color when selecting a preset
+        self._save_workspace_to_db()
     
     @rx.event
     def set_custom_accent_color(self, color: str):
@@ -229,12 +240,14 @@ class WorkspaceState(rx.State):
         if color and (color.startswith("#") and len(color) == 7):
             self.accent_color = color
             self.custom_accent_color = color
+            self._save_workspace_to_db()
     
     @rx.event
     def toggle_menu_item_visibility(self, menu_item: str):
         """Toggle visibility of a menu item."""
         if menu_item in self.menu_item_visibility:
             self.menu_item_visibility[menu_item] = not self.menu_item_visibility[menu_item]
+            self._save_workspace_to_db()
     
     @rx.var
     def radio_button_background_color(self) -> str:
@@ -242,4 +255,77 @@ class WorkspaceState(rx.State):
         if self.theme == "Dark":
             return "rgb(16, 16, 18)"
         return "white"
+    
+    @rx.event
+    def load_workspace_from_db(self):
+        """Load workspace settings from Supabase."""
+        if self._workspace_loaded:
+            return
+        
+        try:
+            from app.services.supabase_service import SupabaseService
+            
+            workspace = SupabaseService.get_workspace(self.workspace_slug)
+            if workspace:
+                self.workspace_id = workspace.get("id", "")
+                self.workspace_name = workspace.get("name", self.workspace_name)
+                self.workspace_slug = workspace.get("slug", self.workspace_slug)
+                self.theme = workspace.get("theme", self.theme)
+                self.accent_color = workspace.get("accent_color", self.accent_color)
+                self.sidebar_collapsed = workspace.get("sidebar_collapsed", self.sidebar_collapsed)
+                self.sidebar_width = workspace.get("sidebar_width", self.sidebar_width)
+                
+                # Load menu item visibility if present
+                menu_visibility = workspace.get("menu_item_visibility")
+                if menu_visibility and isinstance(menu_visibility, dict):
+                    self.menu_item_visibility = menu_visibility
+            else:
+                # Create workspace if it doesn't exist
+                self._create_workspace_in_db()
+            
+            self._workspace_loaded = True
+        except Exception as e:
+            print(f"Failed to load workspace from database: {e}")
+            self._workspace_loaded = True  # Prevent retrying on every render
+    
+    def _create_workspace_in_db(self):
+        """Create the workspace in Supabase."""
+        try:
+            from app.services.supabase_service import SupabaseService
+            
+            data = {
+                "name": self.workspace_name,
+                "slug": self.workspace_slug,
+                "theme": self.theme,
+                "accent_color": self.accent_color,
+                "sidebar_collapsed": self.sidebar_collapsed,
+                "sidebar_width": self.sidebar_width,
+                "menu_item_visibility": self.menu_item_visibility,
+            }
+            result = SupabaseService.create_workspace(data)
+            if result:
+                self.workspace_id = result.get("id", "")
+        except Exception as e:
+            print(f"Failed to create workspace in database: {e}")
+    
+    def _save_workspace_to_db(self):
+        """Save workspace settings to Supabase."""
+        if not self.workspace_id:
+            return
+        
+        try:
+            from app.services.supabase_service import SupabaseService
+            
+            data = {
+                "name": self.workspace_name,
+                "slug": self.workspace_slug,
+                "theme": self.theme,
+                "accent_color": self.accent_color,
+                "sidebar_collapsed": self.sidebar_collapsed,
+                "sidebar_width": self.sidebar_width,
+                "menu_item_visibility": self.menu_item_visibility,
+            }
+            SupabaseService.update_workspace(self.workspace_id, data)
+        except Exception as e:
+            print(f"Failed to save workspace to database: {e}")
 
