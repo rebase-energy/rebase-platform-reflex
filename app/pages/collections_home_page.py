@@ -93,8 +93,8 @@ def sidebar_resize_handle() -> rx.Component:
     )
 
 
-def lists_page() -> rx.Component:
-    """Main page for the modular list system."""
+def collections_home_page() -> rx.Component:
+    """Main page for viewing collections."""
     return rx.el.div(
         rx.el.div(
             collections_sidebar(),

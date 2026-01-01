@@ -4,34 +4,91 @@ from datetime import datetime
 from app.states.entities import ObjectType, TimeSeries
 
 
-# Attribute/Column configuration for collections
-class ListAttribute(TypedDict):
-    name: str  # Display name of the attribute
+# Table column configuration for collections
+class TableColumn(TypedDict):
+    name: str  # Display name of the column
     key: str  # Key to access the value in the entity
     type: Literal["text", "number", "date", "status", "tags"]  # How to render it
     visible: bool  # Whether to show this column
 
 
 # Collection configuration
-class ListConfig(TypedDict):
+class CollectionConfig(TypedDict, total=False):
     id: str
     name: str
     object_type: ObjectType
-    attributes: list[ListAttribute]  # Configurable columns
+    attributes: list[TableColumn]  # Configurable table columns
     created_at: str
     emoji: str  # Emoji icon for the collection
     view_type: Literal["table", "time_series_cards"]  # View layout type
+    created_by: str  # User who created the collection
+    is_favorite: bool  # Whether collection is favorited
+    is_default: bool  # Whether this is the default collection shown on login
 
 
 # Collection State Management
 class CollectionsState(rx.State):
     """State management for collections (lists/views that group entities)."""
     
-    # Collections storage
-    _collections: list[ListConfig] = []
+    # Collections storage - initialize with default collections for immediate availability
+    _collections: list[CollectionConfig] = []
+    
+    def _initialize_default_collections(self):
+        """Initialize default collections if not already initialized."""
+        if len(self._collections) > 0:
+            return  # Already initialized
+        
+        from datetime import datetime
+        # Initialize with a default TimeSeries collection
+        default_collection: CollectionConfig = {
+            "id": "default-timeseries",
+            "name": "Time Series",
+            "object_type": "TimeSeries",
+            "attributes": [
+                {"name": "Name", "key": "name", "type": "text", "visible": True},
+                {"name": "Description", "key": "description", "type": "text", "visible": True},
+                {"name": "Unit", "key": "unit", "type": "text", "visible": True},
+                {"name": "Site", "key": "site_name", "type": "text", "visible": True},
+                {"name": "Timestamp", "key": "timestamp", "type": "date", "visible": True},
+                {"name": "Value", "key": "value", "type": "number", "visible": True},
+                {"name": "Type", "key": "type", "type": "status", "visible": True},
+                {"name": "Tags", "key": "tags", "type": "tags", "visible": True},
+            ],
+            "created_at": datetime.now().isoformat(),
+            "emoji": "📊",
+            "view_type": "table",
+            "created_by": "Sebastian Haglund",
+            "is_favorite": False,
+            "is_default": True,
+        }
+        
+        # Create Esett data collection with Time Series Card Layout
+        esett_collection: CollectionConfig = {
+            "id": "esett-data",
+            "name": "Esett data",
+            "object_type": "TimeSeries",
+            "attributes": [
+                {"name": "Name", "key": "name", "type": "text", "visible": True},
+                {"name": "Description", "key": "description", "type": "text", "visible": True},
+                {"name": "Unit", "key": "unit", "type": "text", "visible": True},
+            ],
+            "created_at": datetime.now().isoformat(),
+            "emoji": "📈",
+            "view_type": "time_series_cards",
+            "created_by": "Sebastian Haglund",
+            "is_favorite": True,
+            "is_default": False,
+        }
+        
+        self._collections = [default_collection, esett_collection]
+        if not self.selected_collection_id:
+            self.selected_collection_id = "default-timeseries"
     
     # Selected collection
     selected_collection_id: str = ""
+    
+    # Route parameter for collection pages (set by JavaScript)
+    route_collection_id: str = ""
     
     # Collection UI state
     show_create_collection_modal: bool = False
@@ -44,6 +101,9 @@ class CollectionsState(rx.State):
     collection_search_query: str = ""
     show_sort_modal: bool = False
     show_filter_modal: bool = False
+    
+    # Settings page search
+    settings_collections_search_query: str = ""
     
     # Collection view settings
     # Column widths (stored as dict: column_key -> width in pixels)
@@ -68,12 +128,20 @@ class CollectionsState(rx.State):
     }
     
     @rx.var
-    def collections(self) -> list[ListConfig]:
+    def collections(self) -> list[CollectionConfig]:
         """Get all collections."""
+        # Ensure collections are initialized
+        self._initialize_default_collections()
         return self._collections
     
     @rx.var
-    def selected_collection(self) -> ListConfig | None:
+    def current_route_collection_id(self) -> str:
+        """Get collection_id from current route via JavaScript."""
+        # This will be set by JavaScript in the page component
+        return self.route_collection_id if hasattr(self, 'route_collection_id') else ''
+    
+    @rx.var
+    def selected_collection(self) -> CollectionConfig | None:
         """Get the currently selected collection."""
         if not self.selected_collection_id:
             return None
@@ -134,8 +202,6 @@ class CollectionsState(rx.State):
         locations = [
             {"name": "Blackfjället", "capacity": 90.2},
             {"name": "Ranasjo", "capacity": 150.0},
-            {"name": "Salsjo", "capacity": 86.8},
-            {"name": "Åskälen", "capacity": 288.0},
         ]
         
         for loc in locations:
@@ -222,43 +288,7 @@ class CollectionsState(rx.State):
     @rx.event
     def on_load(self):
         """Initialize default collections on app load."""
-        # Initialize with a default TimeSeries collection
-        default_collection: ListConfig = {
-            "id": "default-timeseries",
-            "name": "Time Series",
-            "object_type": "TimeSeries",
-            "attributes": [
-                {"name": "Name", "key": "name", "type": "text", "visible": True},
-                {"name": "Description", "key": "description", "type": "text", "visible": True},
-                {"name": "Unit", "key": "unit", "type": "text", "visible": True},
-                {"name": "Site", "key": "site_name", "type": "text", "visible": True},
-                {"name": "Timestamp", "key": "timestamp", "type": "date", "visible": True},
-                {"name": "Value", "key": "value", "type": "number", "visible": True},
-                {"name": "Type", "key": "type", "type": "status", "visible": True},
-                {"name": "Tags", "key": "tags", "type": "tags", "visible": True},
-            ],
-            "created_at": datetime.now().isoformat(),
-            "emoji": "📊",
-            "view_type": "table",
-        }
-        
-        # Create Esett data collection with Time Series Card Layout
-        esett_collection: ListConfig = {
-            "id": "esett-data",
-            "name": "Esett data",
-            "object_type": "TimeSeries",
-            "attributes": [
-                {"name": "Name", "key": "name", "type": "text", "visible": True},
-                {"name": "Description", "key": "description", "type": "text", "visible": True},
-                {"name": "Unit", "key": "unit", "type": "text", "visible": True},
-            ],
-            "created_at": datetime.now().isoformat(),
-            "emoji": "📈",
-            "view_type": "time_series_cards",
-        }
-        
-        self._collections = [default_collection, esett_collection]
-        self.selected_collection_id = "default-timeseries"
+        self._initialize_default_collections()
         
         # Entity storage will be initialized lazily when entities are first accessed
         # This is handled in EntitiesState when entities are loaded
@@ -274,7 +304,7 @@ class CollectionsState(rx.State):
         # Default attributes based on object type
         default_attributes = self._get_default_attributes(object_type)
         
-        new_collection: ListConfig = {
+        new_collection: CollectionConfig = {
             "id": collection_id,
             "name": form_data["collection_name"],
             "object_type": object_type,
@@ -282,6 +312,9 @@ class CollectionsState(rx.State):
             "created_at": datetime.now().isoformat(),
             "emoji": form_data.get("emoji", "📋"),
             "view_type": "table",
+            "created_by": "Sebastian Haglund",  # TODO: Get from actual user session
+            "is_favorite": False,
+            "is_default": False,
         }
         
         self._collections.append(new_collection)
@@ -292,7 +325,7 @@ class CollectionsState(rx.State):
         self.show_create_collection_modal = False
         return rx.toast.success(f"Collection '{new_collection['name']}' created successfully!")
     
-    def _get_default_attributes(self, object_type: ObjectType) -> list[ListAttribute]:
+    def _get_default_attributes(self, object_type: ObjectType) -> list[TableColumn]:
         """Get default attributes for an object type."""
         if object_type == "TimeSeries":
             return [
@@ -314,7 +347,7 @@ class CollectionsState(rx.State):
     
     @rx.event
     def select_collection(self, collection_id: str):
-        """Select a collection and optionally load its entities."""
+        """Select a collection and navigate to its page."""
         # Set selection immediately for instant feedback
         self.selected_collection_id = collection_id
         
@@ -324,9 +357,20 @@ class CollectionsState(rx.State):
         EntitiesState.selected_object_type = ""
         WorkspaceState.selected_menu_item = ""
         
-        # Load entities lazily if this collection needs it and doesn't have it yet
-        # This will be handled by the component that uses select_collection
-        return None
+        # Navigate to the collection page
+        return rx.redirect(f"/collections/{collection_id}")
+    
+    @rx.event
+    def load_collection_page(self, collection_id: str):
+        """Load a collection page - sets the collection without redirecting."""
+        # Set selection immediately for instant feedback
+        self.selected_collection_id = collection_id
+        
+        # Clear other selections
+        from app.states.entities import EntitiesState
+        from app.states.workspace import WorkspaceState
+        EntitiesState.selected_object_type = ""
+        WorkspaceState.selected_menu_item = ""
     
     @rx.event
     def toggle_create_collection_modal(self):
@@ -410,6 +454,56 @@ class CollectionsState(rx.State):
         self.collection_search_query = query
     
     @rx.event
+    def set_settings_collections_search_query(self, query: str):
+        """Set the search query for filtering collections in settings page."""
+        self.settings_collections_search_query = query
+    
+    @rx.var
+    def filtered_collections_for_settings(self) -> list[CollectionConfig]:
+        """Get collections filtered by search query for settings page."""
+        # Ensure collections are initialized first
+        self._initialize_default_collections()
+        collections = self._collections
+        if not self.settings_collections_search_query:
+            return collections
+        query = self.settings_collections_search_query.lower()
+        return [
+            collection for collection in collections
+            if query in collection.get("name", "").lower()
+            or query in collection.get("created_by", "").lower()
+        ]
+    
+    @rx.var
+    def filtered_collections_with_entry_counts(self) -> list[dict]:
+        """Get filtered collections with their entry counts included."""
+        # Ensure collections are initialized first
+        self._initialize_default_collections()
+        
+        # Get filtered collections
+        filtered = self.filtered_collections_for_settings
+        
+        # Add entry counts - use the public computed var from EntitiesState
+        result = []
+        try:
+            from app.states.entities import EntitiesState
+            # Use the public computed var instead of accessing private attribute
+            entities_dict = EntitiesState.time_series_entities_by_collection
+        except (AttributeError, ImportError):
+            # If EntitiesState isn't ready, use empty dict
+            entities_dict = {}
+        
+        for collection in filtered:
+            collection_id = collection["id"]
+            collection_with_count = collection.copy()
+            
+            # Get the list of entities for this collection
+            items = entities_dict.get(collection_id, []) if isinstance(entities_dict, dict) else []
+            collection_with_count["entry_count"] = len(items) if isinstance(items, list) else 0
+            
+            result.append(collection_with_count)
+        return result
+    
+    @rx.event
     def toggle_sort_modal(self):
         """Toggle the sort modal."""
         self.show_sort_modal = not self.show_sort_modal
@@ -433,4 +527,64 @@ class CollectionsState(rx.State):
                     self.column_widths[column_key] = max(50, width)  # Minimum width of 50px
                 except ValueError:
                     pass
+    
+    @rx.var
+    def collection_entry_counts(self) -> dict[str, int]:
+        """Get entry counts for all collections."""
+        from app.states.entities import EntitiesState
+        counts = {}
+        for collection in self._collections:
+            collection_id = collection["id"]
+            # Get entities from EntitiesState
+            entities_dict = EntitiesState._time_series_entities
+            items = entities_dict.get(collection_id, [])
+            counts[collection_id] = len(items)
+        return counts
+    
+    def get_collection_entry_count(self, collection_id: str) -> int:
+        """Get entry count for a specific collection."""
+        counts = self.collection_entry_counts
+        return counts.get(collection_id, 0)
+    
+    @rx.var
+    def collections_with_entry_counts(self) -> list[dict]:
+        """Get collections with their entry counts included."""
+        from app.states.entities import EntitiesState
+        entities_dict = EntitiesState._time_series_entities
+        result = []
+        for collection in self._collections:
+            collection_id = collection["id"]
+            items = entities_dict.get(collection_id, [])
+            collection_with_count = collection.copy()
+            collection_with_count["entry_count"] = len(items)
+            result.append(collection_with_count)
+        return result
+    
+    @rx.event
+    def toggle_collection_favorite(self, collection_id: str):
+        """Toggle favorite status for a collection."""
+        for i, collection in enumerate(self._collections):
+            if collection["id"] == collection_id:
+                updated_collection = collection.copy()
+                updated_collection["is_favorite"] = not collection.get("is_favorite", False)
+                self._collections[i] = updated_collection
+                break
+    
+    @rx.event
+    def set_default_collection(self, collection_id: str):
+        """Set a collection as the default (only one can be default at a time)."""
+        # First, unset all other collections as default
+        for i, collection in enumerate(self._collections):
+            if collection.get("is_default", False):
+                updated_collection = collection.copy()
+                updated_collection["is_default"] = False
+                self._collections[i] = updated_collection
+        
+        # Then set the selected collection as default
+        for i, collection in enumerate(self._collections):
+            if collection["id"] == collection_id:
+                updated_collection = collection.copy()
+                updated_collection["is_default"] = True
+                self._collections[i] = updated_collection
+                break
 

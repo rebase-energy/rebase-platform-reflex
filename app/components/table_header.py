@@ -2,8 +2,8 @@ import reflex as rx
 from app.states.collections import CollectionsState
 
 
-def list_header() -> rx.Component:
-    """Header component with search, sort, and filter buttons (Attio style)."""
+def table_header() -> rx.Component:
+    """Header component with search, sort, and filter buttons (Attio style) for table view."""
     return rx.el.div(
         rx.el.div(
             # Free-form search input

@@ -2,14 +2,14 @@ import reflex as rx
 from typing import Callable, Any
 
 
-def list_view(
+def table_view(
     items: list[Any],
     render_item: Callable[[Any], rx.Component],
     empty_message: str = "No items to display",
     class_name: str = "",
 ) -> rx.Component:
     """
-    A reusable list view primitive component.
+    A reusable table view primitive component.
     
     Args:
         items: List of items to display (can be a reactive var from rx.var)
@@ -26,19 +26,19 @@ def list_view(
     )
 
 
-def list_item(
+def table_row(
     content: rx.Component,
     on_click: Callable | None = None,
     is_selected: bool = False,
     class_name: str = "",
 ) -> rx.Component:
     """
-    A reusable list item component.
+    A reusable table row component.
     
     Args:
-        content: The content to display in the list item
+        content: The content to display in the table row
         on_click: Optional click handler
-        is_selected: Whether this item is selected
+        is_selected: Whether this row is selected
         class_name: Additional CSS classes
     """
     base_classes = "px-4 py-3 border-b border-gray-700 last:border-b-0 transition-colors"

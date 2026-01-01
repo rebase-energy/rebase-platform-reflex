@@ -2,13 +2,13 @@ import reflex as rx
 from app.states.workspace import WorkspaceState
 
 
-def settings_sidebar() -> rx.Component:
+def settings_sidebar(selected_section: str = "General") -> rx.Component:
     """Settings page sidebar with navigation items."""
     settings_items = [
-        ("General", "settings"),
-        ("Appearance", "palette"),
-        ("Entities", "database"),
-        ("Collections", "list"),
+        ("General", "settings", "general"),
+        ("Appearance", "palette", "appearance"),
+        ("Entities", "database", "entities"),
+        ("Collections", "list", "collections"),
     ]
     
     return rx.el.aside(
@@ -49,9 +49,9 @@ def settings_sidebar() -> rx.Component:
                             ),
                             class_name="flex items-center",
                         ),
-                        on_click=WorkspaceState.select_settings_section(item[0]),
-                                class_name=rx.cond(
-                                    WorkspaceState.selected_settings_section == item[0],
+                        on_click=rx.redirect(f"/settings/{item[2]}"),
+                        class_name=rx.cond(
+                            selected_section == item[0],
                             "w-full flex items-center px-3 py-2 bg-gray-800/50 hover:bg-gray-800/70 rounded-md text-left mb-1",
                             "w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left mb-1",
                         ),

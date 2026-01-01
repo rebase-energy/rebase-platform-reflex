@@ -45,8 +45,34 @@ class EntitiesState(rx.State):
     def on_load(self):
         """Initialize entity storage for default collections."""
         # Initialize empty storage for default collections
-        self._time_series_entities["esett-data"] = []
         self._time_series_entities["default-timeseries"] = []
+        
+        # Create TimeSeries entities for esett-data collection (2 cards = 2 time series)
+        esett_entities = [
+            {
+                "id": "blackfjallet",
+                "name": "Blackfjället",
+                "description": "Blackfjället wind farm",
+                "unit": "MW",
+                "site_name": "Blackfjället",
+                "timestamp": datetime.now().isoformat(),
+                "value": 90.2,
+                "type": "capacity",
+                "tags": [],
+            },
+            {
+                "id": "ranasjo",
+                "name": "Ranasjo",
+                "description": "Ranasjo wind farm",
+                "unit": "MW",
+                "site_name": "Ranasjo",
+                "timestamp": datetime.now().isoformat(),
+                "value": 150.0,
+                "type": "capacity",
+                "tags": [],
+            },
+        ]
+        self._time_series_entities["esett-data"] = esett_entities
     
     @rx.var
     def all_time_series_entities(self) -> list[TimeSeries]:

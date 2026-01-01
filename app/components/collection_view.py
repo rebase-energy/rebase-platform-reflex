@@ -536,7 +536,7 @@ def object_table_view(object_type: str, items: list[TimeSeries]) -> rx.Component
 
 
 def collection_view() -> rx.Component:
-    """A list view with configurable columns, similar to Attio."""
+    """A collection view with configurable table columns, similar to Attio."""
     return rx.cond(
         WorkspaceState.selected_menu_item != "",
         # Show menu item "coming soon" view
@@ -584,7 +584,7 @@ def collection_view() -> rx.Component:
             rx.cond(
                 CollectionsState.selected_collection,
                 rx.el.div(
-            # List header with name and emoji
+            # Collection header with name and emoji
             rx.el.div(
                 rx.el.div(
                     # Emoji button with picker
@@ -605,7 +605,7 @@ def collection_view() -> rx.Component:
                         emoji_picker(),
                         class_name="relative mr-3",
                     ),
-                    # List name and type
+                    # Collection name and type
                     rx.el.div(
                         rx.el.h2(
                             CollectionsState.selected_collection["name"],

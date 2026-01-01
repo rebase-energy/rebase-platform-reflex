@@ -2,8 +2,8 @@ import reflex as rx
 from app.states.collections import CollectionsState
 
 
-def create_list_modal() -> rx.Component:
-    """Modal for creating a new list."""
+def create_collection_modal() -> rx.Component:
+    """Modal for creating a new collection."""
     return rx.el.div(
         rx.cond(
             CollectionsState.show_create_collection_modal,
@@ -11,18 +11,18 @@ def create_list_modal() -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         rx.el.h2(
-                            "Create New List",
+                            "Create New Collection",
                             class_name="text-white font-bold text-xl mb-4",
                         ),
                         rx.el.form(
                             rx.el.div(
                                 rx.el.label(
-                                    "List Name",
+                                    "Collection Name",
                                     class_name="block text-gray-300 text-sm font-medium mb-2",
                                 ),
                                 rx.el.input(
                                     name="collection_name",
-                                    placeholder="Enter list name...",
+                                    placeholder="Enter collection name...",
                                     class_name="w-full border border-gray-700 rounded-md px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500",
                                     style={"backgroundColor": "rgb(16, 16, 18)"},  # Lowest level background for inputs
                                 ),
@@ -51,7 +51,7 @@ def create_list_modal() -> rx.Component:
                                     class_name="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 mr-2",
                                 ),
                                 rx.el.button(
-                                    "Create List",
+                                    "Create Collection",
                                     type="submit",
                                     class_name="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700",
                                 ),

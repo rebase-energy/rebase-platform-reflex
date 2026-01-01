@@ -23,6 +23,13 @@ class WorkspaceState(rx.State):
     # Settings page state
     selected_settings_section: str = "General"
     
+    @rx.var
+    def current_settings_section_from_route(self) -> str:
+        """Get current settings section from route using JavaScript."""
+        # This will be set by JavaScript reading the URL
+        # Default to General if not set
+        return self.selected_settings_section
+    
     # Appearance settings state
     theme: str = "Dark"  # "Light", "Dark", or "System"
     accent_color: str = "#10b981"  # Default green
@@ -169,4 +176,11 @@ class WorkspaceState(rx.State):
         """Toggle visibility of a menu item."""
         if menu_item in self.menu_item_visibility:
             self.menu_item_visibility[menu_item] = not self.menu_item_visibility[menu_item]
+    
+    @rx.var
+    def radio_button_background_color(self) -> str:
+        """Get background color for radio buttons based on theme."""
+        if self.theme == "Dark":
+            return "rgb(16, 16, 18)"
+        return "white"
 

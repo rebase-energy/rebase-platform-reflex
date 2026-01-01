@@ -101,8 +101,8 @@ def collapsible_section(
     )
 
 
-def lists_sidebar() -> rx.Component:
-    """Sidebar with Attio-style menu items and collapsible sections: Favorites, Entities, and Lists."""
+def collections_sidebar() -> rx.Component:
+    """Sidebar with Attio-style menu items and collapsible sections: Favorites, Entities, and Collections."""
     return rx.el.aside(
         rx.el.div(
             # Workspace selector with toggle button (like Attio)

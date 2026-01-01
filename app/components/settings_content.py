@@ -1,13 +1,14 @@
 import reflex as rx
 from app.states.workspace import WorkspaceState
+from app.states.collections import CollectionsState
 
 
 def settings_general_content() -> rx.Component:
     """General settings content."""
-    return rx.el.div(
+    return rx.fragment(
         rx.el.h1(
             "General",
-            class_name="text-2xl font-semibold text-white mb-2",
+            class_name="text-2xl font-semibold text-white mb-2 mt-0",
         ),
         rx.el.p(
             "Change the settings for your current workspace",
@@ -118,9 +119,8 @@ def settings_general_content() -> rx.Component:
                     class_name="flex flex-col",
                 ),
             ),
-            class_name="space-y-6",
+            class_name="p-6 space-y-6",
         ),
-        class_name="p-6",
     )
 
 
@@ -151,18 +151,18 @@ def settings_appearance_content() -> rx.Component:
         ("Reports", "bar-chart"),
     ]
     
-    return rx.el.div(
+    return rx.fragment(
         rx.el.h1(
-            rx.icon("palette", class_name="h-5 w-5 text-gray-400 mr-2 inline"),
             "Appearance",
-            class_name="text-2xl font-semibold text-white mb-2 flex items-center",
+            class_name="text-2xl font-semibold text-white mb-2 mt-0",
         ),
         rx.el.p(
             "Customize the look and feel of your platform",
-            class_name="text-gray-400 text-sm mb-8",
+            class_name="text-gray-400 text-sm mb-6",
         ),
-        # Theme section
         rx.el.div(
+            # Theme section
+            rx.el.div(
             rx.el.h3(
                 "Theme",
                 class_name="text-white font-medium mb-1",
@@ -359,15 +359,16 @@ def settings_appearance_content() -> rx.Component:
             class_name="mb-8",
         ),
         class_name="space-y-8",
+        ),
     )
 
 
 def settings_entities_content() -> rx.Component:
     """Entities settings content."""
-    return rx.el.div(
+    return rx.fragment(
         rx.el.h1(
             "Entities",
-            class_name="text-2xl font-semibold text-white mb-2",
+            class_name="text-2xl font-semibold text-white mb-2 mt-0",
         ),
         rx.el.p(
             "Manage entity types and configurations",
@@ -385,35 +386,186 @@ def settings_entities_content() -> rx.Component:
 
 def settings_collections_content() -> rx.Component:
     """Collections settings content."""
-    return rx.el.div(
+    return rx.fragment(
+        rx.el.style(
+            """
+            .custom-radio-button {
+                appearance: none;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                width: 16px;
+                height: 16px;
+                border: 2px solid rgb(55, 65, 81);
+                border-radius: 50%;
+                background-color: rgb(16, 16, 18);
+                position: relative;
+                cursor: pointer;
+                pointer-events: auto;
+                z-index: 1;
+            }
+            .custom-radio-button:checked {
+                background-color: rgb(16, 16, 18);
+            }
+            .custom-radio-button:checked::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background-color: var(--accent-color, #10b981);
+                pointer-events: none;
+            }
+            """,
+        ),
         rx.el.h1(
             "Collections",
-            class_name="text-2xl font-semibold text-white mb-2",
+            class_name="text-2xl font-semibold text-white mb-2 mt-0",
         ),
         rx.el.p(
-            "Manage collections and their configurations",
+            "Modify and add Collections in your workspace",
             class_name="text-gray-400 text-sm mb-6",
         ),
+        # Search bar and New collection button
         rx.el.div(
-            rx.el.p(
-                "Collections settings coming soon...",
-                class_name="text-gray-400",
+            rx.el.input(
+                placeholder="Search collections",
+                value=CollectionsState.settings_collections_search_query,
+                on_change=CollectionsState.set_settings_collections_search_query,
+                class_name="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-md text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
             ),
-            class_name="p-6",
+            rx.el.button(
+                "+ New collection",
+                on_click=CollectionsState.toggle_create_collection_modal,
+                class_name="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition-colors whitespace-nowrap",
+            ),
+            class_name="flex items-center gap-3 mb-6",
+        ),
+        # Collections table
+        rx.el.div(
+            rx.el.table(
+                rx.el.thead(
+                    rx.el.tr(
+                        rx.el.th("Collection", class_name="text-left text-sm font-medium text-gray-400 px-4 py-2"),
+                        rx.el.th("Entity", class_name="text-left text-sm font-medium text-gray-400 px-4 py-2"),
+                        rx.el.th("Created by", class_name="text-left text-sm font-medium text-gray-400 px-4 py-2"),
+                        rx.el.th("Entries", class_name="text-left text-sm font-medium text-gray-400 px-4 py-2"),
+                        rx.el.th(
+                            rx.el.div(
+                                rx.el.span("Default", class_name="mr-1.5"),
+                                rx.el.button(
+                                    rx.icon(
+                                        "help-circle",
+                                        class_name="h-3.5 w-3.5 text-gray-500 hover:text-gray-400",
+                                    ),
+                                    title="The default collection will be showed when logging in.",
+                                    class_name="cursor-help inline-flex items-center bg-transparent border-none p-0 hover:opacity-80",
+                                    type="button",
+                                ),
+                                class_name="flex items-center",
+                            ),
+                            class_name="text-left text-sm font-medium text-gray-400 px-4 py-2",
+                        ),
+                        rx.el.th("", class_name="text-left text-sm font-medium text-gray-400 px-4 py-2 w-12"),
+                        class_name="border-b border-gray-800",
+                    ),
+                ),
+                rx.el.tbody(
+                    rx.foreach(
+                        CollectionsState.filtered_collections_with_entry_counts,
+                        lambda collection: rx.el.tr(
+                            # Star icon and Collection name
+                            rx.el.td(
+                                rx.el.div(
+                                    rx.el.button(
+                                        rx.icon(
+                                            "star",
+                                            class_name=rx.cond(
+                                                collection.get("is_favorite", False),
+                                                "h-4 w-4 text-yellow-400 fill-yellow-400",
+                                                "h-4 w-4 text-gray-500 hover:text-yellow-400",
+                                            ),
+                                        ),
+                                        on_click=CollectionsState.toggle_collection_favorite(collection["id"]),
+                                        class_name="mr-2 hover:opacity-80 transition-opacity",
+                                    ),
+                                    rx.el.span(
+                                        collection["name"],
+                                        class_name="text-white text-sm",
+                                    ),
+                                    class_name="flex items-center",
+                                ),
+                                class_name="px-4 py-3",
+                            ),
+                            # Entity type
+                            rx.el.td(
+                                rx.el.span(
+                                    collection.get("object_type", "TimeSeries"),
+                                    class_name="px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
+                                ),
+                                class_name="px-4 py-3",
+                            ),
+                            # Created by
+                            rx.el.td(
+                                rx.el.span(
+                                    collection.get("created_by", "Unknown"),
+                                    class_name="text-gray-300 text-sm",
+                                ),
+                                class_name="px-4 py-3",
+                            ),
+                            # Entries count
+                            rx.el.td(
+                                rx.el.span(
+                                    collection.get("entry_count", 0),
+                                    class_name="text-gray-300 text-sm",
+                                ),
+                                class_name="px-4 py-3",
+                            ),
+                            # Default radio button
+                            rx.el.td(
+                                rx.el.input(
+                                    type="radio",
+                                    name="default_collection",
+                                    checked=collection.get("is_default", False),
+                                    on_change=CollectionsState.set_default_collection(collection["id"]),
+                                    class_name="custom-radio-button",
+                                    style={
+                                        "--accent-color": WorkspaceState.accent_color,
+                                    },
+                                ),
+                                class_name="px-4 py-3",
+                            ),
+                            # Three dots menu
+                            rx.el.td(
+                                rx.el.button(
+                                    rx.icon("more-vertical", class_name="h-4 w-4 text-gray-400 hover:text-white"),
+                                    class_name="hover:bg-gray-800 rounded-md p-1 transition-colors",
+                                ),
+                                class_name="px-4 py-3",
+                            ),
+                            class_name="border-b border-gray-800 hover:bg-gray-800/30 transition-colors",
+                        ),
+                    ),
+                ),
+                class_name="w-full",
+            ),
+            class_name="bg-gray-800/30 rounded-lg overflow-hidden",
         ),
     )
 
 
-def settings_content() -> rx.Component:
+def settings_content(selected_section: str = "General") -> rx.Component:
     """Main settings content area that shows the selected section."""
     return rx.cond(
-        WorkspaceState.selected_settings_section == "General",
+        selected_section == "General",
         settings_general_content(),
         rx.cond(
-            WorkspaceState.selected_settings_section == "Appearance",
+            selected_section == "Appearance",
             settings_appearance_content(),
             rx.cond(
-                WorkspaceState.selected_settings_section == "Entities",
+                selected_section == "Entities",
                 settings_entities_content(),
                 settings_collections_content(),
             ),
