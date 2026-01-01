@@ -25,6 +25,7 @@ class ListConfig(TypedDict):
     attributes: list[ListAttribute]  # Configurable columns
     created_at: str
     emoji: str  # Emoji icon for the list
+    view_type: Literal["table", "time_series_cards"]  # View layout type
 
 
 # TimeSeries object (example of what can be stored in a list)
@@ -82,6 +83,12 @@ class ListsState(rx.State):
     # Column widths (stored as dict: column_key -> width in pixels)
     column_widths: dict[str, int] = {}
     
+    # Chart legend visibility state for timeseries cards (card_id -> {series_name: visible})
+    timeseries_chart_legend_visibility: dict[str, dict[str, bool]] = {}
+    
+    # Column layout for timeseries card grid (1 or 2 columns)
+    timeseries_card_columns: int = 2
+    
     # Default column widths
     _default_column_widths = {
         "name": 200,
@@ -106,7 +113,71 @@ class ListsState(rx.State):
             if lst["id"] == self.selected_list_id:
                 return lst
         return None
-
+    
+    @rx.var
+    def selected_list_view_type(self) -> str:
+        """Get the view type of the selected list, defaulting to 'table'."""
+        if not self.selected_list_id:
+            return "table"
+        for lst in self._lists:
+            if lst["id"] == self.selected_list_id:
+                # Check if view_type exists in the dict
+                if "view_type" in lst:
+                    return lst["view_type"]
+                return "table"
+        return "table"
+    
+    @rx.var
+    def esett_card_data(self) -> list[dict]:
+        """Get time series card data for Esett data collection."""
+        # For now, return sample data matching the screenshot
+        # Later this will be populated from TimeDB API
+        import random
+        from datetime import datetime, timedelta
+        
+        cards = []
+        locations = [
+            {"name": "Blackfjället", "capacity": 90.2},
+            {"name": "Ranasjo", "capacity": 150.0},
+            {"name": "Salsjo", "capacity": 86.8},
+            {"name": "Åskälen", "capacity": 288.0},
+        ]
+        
+        for loc in locations:
+            data_points = []
+            now = datetime.now()
+            start_time = now - timedelta(days=1)
+            end_time = now + timedelta(days=4)
+            current_time = start_time
+            
+            while current_time <= end_time:
+                hour = current_time.hour
+                base = loc["capacity"] * 0.6
+                variation = loc["capacity"] * 0.3 * (0.5 + (hour % 12) / 12)
+                actual = base + variation + (loc["capacity"] * 0.1 * random.uniform(-1, 1))
+                forecast = actual * (1 + random.uniform(-0.1, 0.1))
+                
+                data_points.append({
+                    "time": current_time.strftime("%a %d/%m %H:%M"),
+                    "capacity": loc["capacity"],
+                    "actual": max(0, min(loc["capacity"], actual)),
+                    "forecast": max(0, min(loc["capacity"], forecast)),
+                    "iceaware": None,
+                    "iceblind": None,
+                    "iceloss": None,
+                })
+                current_time += timedelta(hours=1)
+            
+            cards.append({
+                "id": loc["name"].lower().replace(" ", "-"),
+                "name": loc["name"],
+                "capacity_mw": loc["capacity"],
+                "data": data_points,
+                "view_tabs": ["Default view", "Iceloss", "Iceloss pct", "Iceloss weather"],
+            })
+        
+        return cards
+    
     @rx.var
     def selected_list_items(self) -> list[TimeSeries]:
         if not self.selected_list_id:
@@ -198,9 +269,27 @@ class ListsState(rx.State):
             ],
             "created_at": datetime.now().isoformat(),
             "emoji": "📊",
+            "view_type": "table",
         }
-        self._lists = [default_list]
+        
+        # Create Esett data collection with Time Series Card Layout
+        esett_list: ListConfig = {
+            "id": "esett-data",
+            "name": "Esett data",
+            "object_type": "TimeSeries",
+            "attributes": [
+                {"name": "Name", "key": "name", "type": "text", "visible": True},
+                {"name": "Description", "key": "description", "type": "text", "visible": True},
+                {"name": "Unit", "key": "unit", "type": "text", "visible": True},
+            ],
+            "created_at": datetime.now().isoformat(),
+            "emoji": "📈",
+            "view_type": "time_series_cards",
+        }
+        
+        self._lists = [default_list, esett_list]
         self.selected_list_id = "default-timeseries"
+        self._time_series_items["esett-data"] = []  # Initialize empty for now
         
         # Load time series from API
         try:
@@ -330,6 +419,29 @@ class ListsState(rx.State):
     @rx.event
     def set_emoji_search_query(self, query: str):
         self.emoji_search_query = query
+    
+    @rx.event
+    def toggle_timeseries_chart_series(self, card_id: str, series_name: str):
+        """Toggle visibility of a chart series in timeseries cards."""
+        if card_id not in self.timeseries_chart_legend_visibility:
+            self.timeseries_chart_legend_visibility[card_id] = {
+                "Capacity": True,
+                "Actual": True,
+                "Forecast": True,
+            }
+        current_value = self.timeseries_chart_legend_visibility[card_id].get(series_name, True)
+        self.timeseries_chart_legend_visibility[card_id][series_name] = not current_value
+    
+    def get_timeseries_chart_series_visible(self, card_id: str, series_name: str) -> bool:
+        """Get visibility state of a chart series in timeseries cards."""
+        if card_id not in self.timeseries_chart_legend_visibility:
+            return True
+        return self.timeseries_chart_legend_visibility[card_id].get(series_name, True)
+    
+    @rx.event
+    def toggle_timeseries_card_columns(self):
+        """Toggle between 1 and 2 columns for timeseries card grid."""
+        self.timeseries_card_columns = 1 if self.timeseries_card_columns == 2 else 2
     
     @rx.event
     def set_emoji_category(self, category: str):

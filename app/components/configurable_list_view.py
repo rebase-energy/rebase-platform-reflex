@@ -1,7 +1,10 @@
 import reflex as rx
+import random
 from app.states.lists import ListsState, ListConfig, TimeSeries, ListAttribute
 from app.components.list_header import list_header
 from app.components.emoji_picker import emoji_picker
+from app.components.timeseries_card import timeseries_card, TimeSeriesCardData, TimeSeriesDataPoint
+from datetime import datetime, timedelta
 
 
 def render_attribute_value(item: TimeSeries, attribute: ListAttribute, attr_key: str, attr_type: str) -> rx.Component:
@@ -45,6 +48,58 @@ def render_attribute_value(item: TimeSeries, attribute: ListAttribute, attr_key:
                     ),
                 ),
             ),
+        ),
+    )
+
+
+def generate_timeseries_card_data(name: str, capacity_mw: float) -> TimeSeriesCardData:
+    """Generate sample time series card data for a location."""
+    data_points: list[TimeSeriesDataPoint] = []
+    now = datetime.now()
+    start_time = now - timedelta(days=1)
+    end_time = now + timedelta(days=4)
+    current_time = start_time
+    
+    while current_time <= end_time:
+        # Generate realistic wind power data
+        hour = current_time.hour
+        base_generation = capacity_mw * 0.6
+        variation = capacity_mw * 0.3 * (0.5 + (hour % 12) / 12)
+        actual = base_generation + variation + (capacity_mw * 0.1 * random.uniform(-1, 1))
+        forecast = actual * (1 + random.uniform(-0.1, 0.1))
+        
+        data_points.append({
+            "time": current_time.strftime("%a %d/%m %H:%M"),
+            "capacity": capacity_mw,
+            "actual": max(0, min(capacity_mw, actual)),
+            "forecast": max(0, min(capacity_mw, forecast)),
+            "iceaware": None,
+            "iceblind": None,
+            "iceloss": None,
+        })
+        current_time += timedelta(hours=1)
+    
+    return {
+        "id": name.lower().replace(" ", "-"),
+        "name": name,
+        "capacity_mw": capacity_mw,
+        "data": data_points,
+        "view_tabs": ["Default view", "Iceloss", "Iceloss pct", "Iceloss weather"],
+    }
+
+
+def timeseries_card_grid_view(items: list[TimeSeriesCardData]) -> rx.Component:
+    """Grid view showing time series cards in a 1 or 2 column layout."""
+    from app.states.lists import ListsState
+    return rx.el.div(
+        rx.foreach(
+            items,
+            lambda card: timeseries_card(card),
+        ),
+        class_name=rx.cond(
+            ListsState.timeseries_card_columns == 1,
+            "grid grid-cols-1 gap-6",
+            "grid grid-cols-2 gap-6",
         ),
     )
 
@@ -563,6 +618,47 @@ def configurable_list_view() -> rx.Component:
                 ),
                 class_name="mb-6",
             ),
+            # Check view type and render accordingly
+            rx.cond(
+                ListsState.selected_list_view_type == "time_series_cards",
+                # Time Series Card Layout with column toggle
+                rx.el.div(
+                    # Column toggle button
+                    rx.el.div(
+                        rx.el.button(
+                            rx.el.div(
+                                rx.cond(
+                                    ListsState.timeseries_card_columns == 1,
+                                    rx.icon(
+                                        "layout-list",
+                                        class_name="h-4 w-4 text-white",
+                                    ),
+                                    rx.icon(
+                                        "layout-grid",
+                                        class_name="h-4 w-4 text-white",
+                                    ),
+                                ),
+                                rx.el.span(
+                                    rx.cond(
+                                        ListsState.timeseries_card_columns == 1,
+                                        "1 Column",
+                                        "2 Columns",
+                                    ),
+                                    class_name="text-sm text-gray-300 ml-2",
+                                ),
+                                class_name="flex items-center",
+                            ),
+                            on_click=ListsState.toggle_timeseries_card_columns,
+                            class_name="px-3 py-2 bg-gray-800/50 hover:bg-gray-800/70 rounded-md border border-gray-700 transition-colors",
+                        ),
+                        class_name="mb-4",
+                    ),
+                    # Cards grid
+                    timeseries_card_grid_view(ListsState.esett_card_data),
+                    class_name="",
+                ),
+                # Default table view
+                rx.el.div(
             # Search, Sort, Filter header
             list_header(),
             # Hidden input for column resize updates
@@ -984,6 +1080,8 @@ def configurable_list_view() -> rx.Component:
             ),
             class_name="w-full",
         ),
+                ),
+            ),
                 rx.el.div(
                     rx.el.span(
                         "No list or object selected. Select a list or object to get started.",

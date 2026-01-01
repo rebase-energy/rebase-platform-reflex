@@ -17,6 +17,9 @@ class DashboardState(rx.State):
     _sites: list[Site] = []
     search_query: str = ""
     show_add_site_modal: bool = False
+    
+    # Chart legend visibility state (site_name -> {series_name: visible})
+    chart_legend_visibility: dict[str, dict[str, bool]] = {}
 
     @rx.event
     def on_load(self):
@@ -92,6 +95,23 @@ class DashboardState(rx.State):
         self._sites.append(new_site)
         self.show_add_site_modal = False
         return rx.toast.success(f"Site '{new_site['name']}' created successfully!")
+
+    @rx.event
+    def toggle_chart_series(self, site_name: str, series_name: str):
+        """Toggle visibility of a chart series."""
+        if site_name not in self.chart_legend_visibility:
+            self.chart_legend_visibility[site_name] = {
+                "Capacity": True,
+                "Actual": True,
+                "Forecast": True,
+            }
+        self.chart_legend_visibility[site_name][series_name] = not self.chart_legend_visibility[site_name].get(series_name, True)
+    
+    def get_chart_series_visible(self, site_name: str, series_name: str) -> bool:
+        """Get visibility state of a chart series."""
+        if site_name not in self.chart_legend_visibility:
+            return True
+        return self.chart_legend_visibility[site_name].get(series_name, True)
 
     @rx.event
     def download_all_sites_data(self) -> rx.event.EventSpec:
