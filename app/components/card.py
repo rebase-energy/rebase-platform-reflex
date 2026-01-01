@@ -1,9 +1,9 @@
 import reflex as rx
 from app.states.state import Site
-from .site_chart import site_chart
+from .card_chart import card_chart
 
 
-def site_card_header(site: Site) -> rx.Component:
+def card_header(site: Site) -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.h3(site["name"], class_name="text-white font-bold text-lg"),
@@ -29,7 +29,7 @@ def site_card_header(site: Site) -> rx.Component:
                 rx.icon("circle-dot", class_name="h-4 w-4 text-gray-500"),
                 class_name="p-1 rounded-full bg-gray-700",
             ),
-            rx.icon("square_check", class_name="h-4 w-4 text-blue-500"),
+            rx.icon("square_check", class_name="h-4 w-4 text-green-500"),
             rx.el.span(site["status"], class_name="text-sm text-gray-400"),
             rx.el.button(
                 rx.icon("fold_vertical", class_name="h-4 w-4 text-gray-400"),
@@ -41,9 +41,9 @@ def site_card_header(site: Site) -> rx.Component:
     )
 
 
-def site_card(site: Site) -> rx.Component:
+def card(site: Site) -> rx.Component:
     return rx.el.div(
-        site_card_header(site),
-        site_chart(site=site),
+        card_header(site),
+        card_chart(site=site),
         class_name="bg-gray-800/50 rounded-lg border border-gray-700",
     )

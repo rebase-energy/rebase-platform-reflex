@@ -1,0 +1,284 @@
+import reflex as rx
+from app.states.lists import ListsState
+
+
+def rebase_icon() -> rx.Component:
+    """Rebase logo icon."""
+    return rx.el.img(
+        src="/logo.png",
+        alt="Rebase",
+        class_name="w-6 h-6 mr-2 flex-shrink-0",
+    )
+
+
+def menu_item(
+    title: str,
+    icon_name: str,
+    on_click_handler: callable = None,
+) -> rx.Component:
+    """A simple menu item with icon and title."""
+    content = rx.el.div(
+        rx.icon(icon_name, class_name="h-4 w-4 text-gray-400 mr-2"),
+        rx.el.span(
+            title,
+            class_name="text-gray-300 text-sm font-medium flex-1 text-left",
+        ),
+        class_name="flex items-center",
+    )
+    
+    if on_click_handler is not None:
+        return rx.el.button(
+            content,
+            on_click=on_click_handler,
+            class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
+        )
+    else:
+        return rx.el.button(
+            content,
+            class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
+        )
+
+
+def collapsible_section(
+    title: str,
+    icon_name: str,
+    is_expanded: bool,
+    toggle_handler: callable,
+    add_handler: callable,
+    children: rx.Component,
+    options_handler: callable = None,
+) -> rx.Component:
+    """A collapsible section with header, icon, options button, and add button."""
+    # Build the options button conditionally
+    options_button = rx.el.button(
+        rx.icon("settings", class_name="h-3.5 w-3.5 text-gray-400 hover:text-white"),
+        on_click=options_handler,
+        class_name="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-gray-700/50 rounded mr-1",
+    ) if options_handler is not None else rx.el.button(
+        rx.icon("settings", class_name="h-3.5 w-3.5 text-gray-400 hover:text-white"),
+        class_name="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-gray-700/50 rounded mr-1",
+    )
+    
+    return rx.el.div(
+        # Section header
+        rx.el.div(
+            rx.el.div(
+                rx.el.button(
+                    rx.cond(
+                        is_expanded,
+                        rx.icon("chevron-down", class_name="h-4 w-4 text-gray-400 mr-2 transition-transform"),
+                        rx.icon("chevron-right", class_name="h-4 w-4 text-gray-400 mr-2 transition-transform"),
+                    ),
+                    rx.icon(icon_name, class_name="h-4 w-4 text-gray-400 mr-2"),
+                    rx.el.span(
+                        title,
+                        class_name="text-gray-300 text-sm font-medium flex-1 text-left",
+                    ),
+                    on_click=toggle_handler,
+                    class_name="flex items-center flex-1",
+                ),
+                options_button,
+                rx.el.button(
+                    rx.icon("plus", class_name="h-3.5 w-3.5 text-gray-400 hover:text-white"),
+                    on_click=add_handler,
+                    class_name="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-gray-700/50 rounded",
+                ),
+                class_name="flex items-center group hover:bg-gray-800/30 rounded-md px-3 py-2 transition-colors",
+            ),
+            class_name="mb-1",
+        ),
+        # Section content (only shown when expanded)
+        rx.cond(
+            is_expanded,
+            rx.el.div(
+                children,
+                class_name="ml-6 space-y-0.5",
+            ),
+        ),
+        class_name="mb-2",
+    )
+
+
+def lists_sidebar() -> rx.Component:
+    """Sidebar with Attio-style menu items and collapsible sections: Favorites, Entities, and Lists."""
+    return rx.el.aside(
+        rx.el.div(
+            # Workspace selector with toggle button (like Attio)
+            rx.cond(
+                ListsState.sidebar_collapsed == False,
+                rx.el.div(
+                    rx.el.div(
+                        rx.el.div(
+                            rebase_icon(),
+                            rx.el.span(
+                                "rebase-energy",
+                                class_name="text-white text-sm font-medium",
+                            ),
+                            rx.icon("chevron-down", class_name="h-4 w-4 text-gray-400 ml-2"),
+                            rx.el.button(
+                                rx.icon("panel-left", class_name="h-4 w-4 text-gray-400"),
+                                on_click=ListsState.toggle_sidebar,
+                                class_name="ml-auto p-1 hover:bg-gray-800/30 rounded transition-colors",
+                            ),
+                            class_name="flex items-center w-full",
+                        ),
+                        class_name="px-3 py-2 hover:bg-gray-800/30 rounded-md",
+                    ),
+                    class_name="p-3 border-b border-gray-800",
+                ),
+                # Collapsed state - just show toggle button
+                rx.el.div(
+                    rx.el.button(
+                        rx.icon("panel-left", class_name="h-4 w-4 text-gray-400"),
+                        on_click=ListsState.toggle_sidebar,
+                        class_name="p-2 hover:bg-gray-800/30 rounded transition-colors w-full flex justify-center",
+                    ),
+                    class_name="p-3 border-b border-gray-800",
+                ),
+            ),
+            # Quick Actions (like Attio) - only when expanded
+            rx.cond(
+                ListsState.sidebar_collapsed == False,
+                rx.el.div(
+                    # Quick Actions (like Attio)
+                    rx.el.div(
+                        rx.el.div(
+                            rx.icon("search", class_name="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"),
+                            rx.el.input(
+                                placeholder="Quick actions",
+                                class_name="w-full border border-gray-700/50 pl-9 pr-3 py-2 rounded-md text-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
+                                style={"backgroundColor": "rgb(23, 23, 25)"},  # Component background
+                            ),
+                            class_name="relative mb-4",
+                        ),
+                        class_name="p-3",
+                    ),
+                    class_name="",
+                ),
+            ),
+            # Sections container
+            rx.cond(
+                ListsState.sidebar_collapsed == False,
+                rx.el.div(
+                # Top menu items (like Attio)
+                rx.el.div(
+                    menu_item("Projects", "folder", ListsState.select_menu_item("Projects")),
+                    menu_item("Workflows", "git-branch", ListsState.select_menu_item("Workflows")),
+                    menu_item("Dashboards", "layout-dashboard", ListsState.select_menu_item("Dashboards")),
+                    menu_item("Notebooks", "book", ListsState.select_menu_item("Notebooks")),
+                    menu_item("Models", "brain", ListsState.select_menu_item("Models")),
+                    menu_item("Datasets", "database", ListsState.select_menu_item("Datasets")),
+                    menu_item("Notifications", "bell", ListsState.select_menu_item("Notifications")),
+                    menu_item("Reports", "bar-chart", ListsState.select_menu_item("Reports")),
+                    class_name="px-2 mb-4 space-y-0.5",
+                ),
+                # Favorites section
+                collapsible_section(
+                    title="Favorites",
+                    icon_name="star",
+                    is_expanded=ListsState.favorites_expanded,
+                    toggle_handler=ListsState.toggle_favorites,
+                    add_handler=ListsState.toggle_create_list_modal,  # Placeholder
+                    children=rx.el.div(
+                        rx.el.span(
+                            "No favorites yet",
+                            class_name="text-gray-500 text-xs px-3 py-1",
+                        ),
+                    ),
+                ),
+                # Entities section (renamed from Objects)
+                collapsible_section(
+                    title="Entities",
+                    icon_name="database",
+                    is_expanded=ListsState.objects_expanded,
+                    toggle_handler=ListsState.toggle_objects,
+                    add_handler=ListsState.toggle_create_list_modal,  # Placeholder
+                    children=rx.el.div(
+                        rx.el.button(
+                            rx.icon("building", class_name="h-4 w-4 text-gray-400 mr-2"),
+                            rx.el.span(
+                                "TimeSeries",
+                                class_name=rx.cond(
+                                    ListsState.selected_object_type == "TimeSeries",
+                                    "px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
+                                    "px-2 py-0.5 rounded text-xs font-mono bg-gray-800/40 text-gray-400",
+                                ),
+                            ),
+                            on_click=ListsState.select_object_type("TimeSeries"),
+                            class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
+                        ),
+                        rx.el.button(
+                            rx.icon("zap", class_name="h-4 w-4 text-gray-400 mr-2"),
+                            rx.el.span(
+                                "Sites",
+                                class_name=rx.cond(
+                                    ListsState.selected_object_type == "Sites",
+                                    "px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
+                                    "px-2 py-0.5 rounded text-xs font-mono bg-gray-800/40 text-gray-400",
+                                ),
+                            ),
+                            on_click=ListsState.select_object_type("Sites"),
+                            class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
+                        ),
+                        rx.el.button(
+                            rx.icon("package", class_name="h-4 w-4 text-gray-400 mr-2"),
+                            rx.el.span(
+                                "Assets",
+                                class_name=rx.cond(
+                                    ListsState.selected_object_type == "Assets",
+                                    "px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
+                                    "px-2 py-0.5 rounded text-xs font-mono bg-gray-800/40 text-gray-400",
+                                ),
+                            ),
+                            on_click=ListsState.select_object_type("Assets"),
+                            class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
+                        ),
+                        class_name="flex flex-col gap-2",
+                    ),
+                ),
+                # Collections section
+                collapsible_section(
+                    title="Collections",
+                    icon_name="list",
+                    is_expanded=ListsState.lists_expanded,
+                    toggle_handler=ListsState.toggle_lists,
+                    add_handler=ListsState.toggle_create_list_modal,
+                    children=rx.el.div(
+                        rx.foreach(
+                            ListsState.lists,
+                            lambda lst: rx.el.button(
+                                rx.el.div(
+                                    rx.icon(
+                                        "rocket",
+                                        class_name="h-4 w-4 text-gray-400 mr-2",
+                                    ),
+                                    rx.el.span(
+                                        lst["name"],
+                                        class_name="text-gray-300 text-sm",
+                                    ),
+                                    class_name="flex items-center",
+                                ),
+                                on_click=ListsState.select_list(lst["id"]),
+                                class_name=rx.cond(
+                                    ListsState.selected_list_id == lst["id"],
+                                    "w-full flex items-center px-3 py-2 bg-gray-800/50 hover:bg-gray-800/70 rounded-md text-left",
+                                    "w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left",
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+                class_name="px-2 pb-4",
+            ),
+            ),
+            class_name="h-full overflow-y-auto",
+        ),
+        class_name="h-screen border-r border-gray-800 flex flex-col transition-all duration-300",
+        style={
+            "backgroundColor": "rgb(16, 16, 18)",
+            "width": ListsState.get_sidebar_width_px,
+            "minWidth": ListsState.get_sidebar_width_px,
+            "maxWidth": ListsState.get_sidebar_width_px,
+        },
+    )
+

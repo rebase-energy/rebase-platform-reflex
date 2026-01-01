@@ -42,7 +42,7 @@ def header() -> rx.Component:
                 rx.el.input(
                     placeholder="Search site by name or ID...",
                     on_change=DashboardState.set_search_query.debounce(300),
-                    class_name="w-64 bg-gray-800 border border-gray-700 pl-9 pr-3 py-2 rounded-md text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500",
+                    class_name="w-64 bg-gray-800 border border-gray-700 pl-9 pr-3 py-2 rounded-md text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-500",
                 ),
                 class_name="relative",
             ),

@@ -10,7 +10,7 @@ def legend_item(color: str, text: str) -> rx.Component:
     )
 
 
-def site_chart(site: Site) -> rx.Component:
+def card_chart(site: Site) -> rx.Component:
     return rx.el.div(
         rx.el.div(
             rx.el.p("kW", class_name="text-xs text-gray-400"),
