@@ -74,6 +74,40 @@ class EntitiesState(rx.State):
         ]
         self._time_series_entities["esett-data"] = esett_entities
     
+    @rx.event
+    def on_load_entity_page(self):
+        """Load handler for entity pages - extracts entity_name from route and sets state."""
+        # Clear other selections first
+        from app.states.collections import CollectionsState
+        from app.states.workspace import WorkspaceState
+        CollectionsState.selected_collection_id = ""
+        WorkspaceState.selected_menu_item = ""
+        
+        # Initialize entity storage
+        if not self._time_series_entities:
+            self.on_load()
+        
+        # Extract entity_name from route params and convert to object_type
+        try:
+            entity_name = self.router._page.params.get("entity_name", "")  # type: ignore[attr-defined]
+            if entity_name:
+                entity_type_map = {
+                    "timeseries": "TimeSeries",
+                    "sites": "Sites",
+                    "assets": "Assets",
+                }
+                object_type = entity_type_map.get(entity_name.lower(), entity_name)
+                self.selected_object_type = object_type
+                
+                # Load data if needed
+                if object_type == "TimeSeries":
+                    self.is_loading = True
+                    yield self.load_timeseries_async()
+                else:
+                    self.is_loading = False
+        except Exception:
+            pass
+    
     @rx.var
     def all_time_series_entities(self) -> list[TimeSeries]:
         """Get all TimeSeries entities from all collections."""
@@ -98,10 +132,46 @@ class EntitiesState(rx.State):
     def time_series_entities_by_collection(self) -> dict[str, list[TimeSeries]]:
         """Get all time series entities organized by collection_id."""
         return self._time_series_entities
+
+    @rx.var
+    def route_entity_name(self) -> str:
+        """Get entity_name from the current route (/entities/[entity_name])."""
+        try:
+            return self.router._page.params.get("entity_name", "")  # type: ignore[attr-defined]
+        except Exception:
+            return ""
+
+    @rx.var
+    def active_object_type(self) -> str:
+        """Active entity type (prefer route param, fallback to selected_object_type)."""
+        name = (self.route_entity_name or "").lower()
+        if name == "timeseries":
+            return "TimeSeries"
+        if name == "sites":
+            return "Sites"
+        if name == "assets":
+            return "Assets"
+        return self.selected_object_type
     
     @rx.event
     def select_object_type(self, object_type: str):
-        """Select an object type for entity browsing."""
+        """Select an object type for entity browsing and navigate to its page."""
+        self.selected_object_type = object_type
+        # Convert entity type to URL-friendly name (e.g., "TimeSeries" -> "timeseries")
+        entity_name_map = {
+            "TimeSeries": "timeseries",
+            "Sites": "sites",
+            "Assets": "assets",
+        }
+        entity_name = entity_name_map.get(object_type, object_type.lower())
+        
+        # Navigate to the entity page
+        from app.states.workspace import WorkspaceState
+        return rx.redirect(f"{WorkspaceState.workspace_base_url}/entities/{entity_name}")
+    
+    @rx.event
+    def load_entity_page(self, object_type: str):
+        """Load an entity page - sets the entity type without redirecting."""
         # Set selection immediately for instant feedback
         self.selected_object_type = object_type
         

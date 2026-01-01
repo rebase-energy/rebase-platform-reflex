@@ -17,7 +17,7 @@ def settings_sidebar(selected_section: str = "General") -> rx.Component:
             rx.el.div(
                 rx.el.button(
                     rx.icon("chevron-left", class_name="h-5 w-5 text-white"),
-                    on_click=rx.redirect("/"),
+                    on_click=rx.redirect(WorkspaceState.workspace_base_url),
                     class_name="p-2 hover:bg-gray-800/50 rounded-md transition-colors",
                 ),
                 rx.el.span(
@@ -49,7 +49,7 @@ def settings_sidebar(selected_section: str = "General") -> rx.Component:
                             ),
                             class_name="flex items-center",
                         ),
-                        on_click=rx.redirect(f"/settings/{item[2]}"),
+                        on_click=rx.redirect(f"{WorkspaceState.workspace_base_url}/settings/{item[2]}"),
                         class_name=rx.cond(
                             selected_section == item[0],
                             "w-full flex items-center px-3 py-2 bg-gray-800/50 hover:bg-gray-800/70 rounded-md text-left mb-1",

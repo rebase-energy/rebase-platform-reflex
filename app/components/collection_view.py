@@ -9,6 +9,65 @@ from app.components.timeseries_card import timeseries_card, TimeSeriesCardData, 
 from datetime import datetime, timedelta
 
 
+class RouteState(rx.State):
+    """Helper state to read current route."""
+    
+    @rx.var
+    def current_path(self) -> str:
+        """Get current URL path."""
+        try:
+            return self.router.url.path  # type: ignore[attr-defined]
+        except Exception:
+            from app.states.workspace import WorkspaceState
+            return f"/{WorkspaceState.workspace_slug}"
+    
+    @rx.var
+    def workspace_prefix(self) -> str:
+        """Get workspace URL prefix."""
+        from app.states.workspace import WorkspaceState
+        # Access workspace_slug directly (string) instead of workspace_base_url (computed var)
+        return f"/{WorkspaceState.workspace_slug}"
+    
+    @rx.var
+    def is_entity_route(self) -> bool:
+        """Check if on an entity route."""
+        prefix = self.workspace_prefix
+        return self.current_path.startswith(f"{prefix}/entities/")
+    
+    @rx.var
+    def is_collection_route(self) -> bool:
+        """Check if on a collection route."""
+        prefix = self.workspace_prefix
+        return self.current_path.startswith(f"{prefix}/collections/")
+    
+    @rx.var
+    def is_menu_route(self) -> bool:
+        """Check if on a menu item route."""
+        prefix = self.workspace_prefix
+        menu_routes = [
+            f"{prefix}/projects", 
+            f"{prefix}/workflows", 
+            f"{prefix}/dashboards", 
+            f"{prefix}/notebooks", 
+            f"{prefix}/models", 
+            f"{prefix}/datasets", 
+            f"{prefix}/notifications", 
+            f"{prefix}/reports"
+        ]
+        return self.current_path in menu_routes
+    
+    @rx.var
+    def menu_item_name(self) -> str:
+        """Get menu item name from route."""
+        if self.is_menu_route:
+            # Extract the last part after workspace slug
+            parts = self.current_path.split("/")
+            if len(parts) >= 3:
+                return parts[2].capitalize()
+        return ""
+
+
+
 def render_attribute_value(item: TimeSeries, attribute: TableColumn, attr_key: str, attr_type: str) -> rx.Component:
     """Render a single attribute value based on its type."""
     # Use rx.cond for reactive rendering based on attribute type
@@ -536,20 +595,20 @@ def object_table_view(object_type: str, items: list[TimeSeries]) -> rx.Component
 
 
 def collection_view() -> rx.Component:
-    """A collection view with configurable table columns, similar to Attio."""
+    """A collection view with configurable table columns, similar to Attio. Content determined by current route."""
     return rx.cond(
-        WorkspaceState.selected_menu_item != "",
+        RouteState.is_menu_route,
         # Show menu item "coming soon" view
         rx.el.div(
             rx.el.span(
-                f"{WorkspaceState.selected_menu_item} view coming soon",
+                f"{RouteState.menu_item_name} coming soon",
                 class_name="text-gray-400 text-sm",
             ),
             class_name="flex items-center justify-center py-12",
         ),
         rx.cond(
-            EntitiesState.selected_object_type != "",
-            # Show object type view
+            RouteState.is_entity_route,
+            # Show entity/object type view
             rx.cond(
                 EntitiesState.is_loading,
                 # Show loading spinner
@@ -570,11 +629,11 @@ def collection_view() -> rx.Component:
                     class_name="flex items-center justify-center py-12 min-h-[400px]",
                 ),
                 rx.cond(
-                    EntitiesState.selected_object_type == "TimeSeries",
+                    EntitiesState.active_object_type == "TimeSeries",
                     object_table_view("TimeSeries", EntitiesState.all_time_series_entities),
                     rx.el.div(
                         rx.el.span(
-                            f"{EntitiesState.selected_object_type} view coming soon",
+                            f"{EntitiesState.active_object_type} view coming soon",
                             class_name="text-gray-400 text-sm",
                         ),
                         class_name="flex items-center justify-center py-12",
@@ -582,7 +641,7 @@ def collection_view() -> rx.Component:
                 ),
             ),
             rx.cond(
-                CollectionsState.selected_collection,
+                CollectionsState.active_collection,
                 rx.el.div(
             # Collection header with name and emoji
             rx.el.div(
@@ -592,8 +651,8 @@ def collection_view() -> rx.Component:
                         rx.el.button(
                             rx.el.span(
                                 rx.cond(
-                                    CollectionsState.selected_collection["emoji"] != "",
-                                    CollectionsState.selected_collection["emoji"],
+                                    CollectionsState.active_collection["emoji"] != "",
+                                    CollectionsState.active_collection["emoji"],
                                     "📋",
                                 ),
                                 class_name="text-2xl",
@@ -608,11 +667,11 @@ def collection_view() -> rx.Component:
                     # Collection name and type
                     rx.el.div(
                         rx.el.h2(
-                            CollectionsState.selected_collection["name"],
+                            CollectionsState.active_collection["name"],
                             class_name="text-white font-bold text-xl",
                         ),
                         rx.el.span(
-                            CollectionsState.selected_collection.get("object_type", "TimeSeries"),
+                            CollectionsState.active_collection.get("object_type", "TimeSeries"),
                             class_name="px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300 ml-2",
                         ),
                         class_name="flex items-center",
@@ -623,7 +682,7 @@ def collection_view() -> rx.Component:
             ),
             # Check view type and render accordingly
             rx.cond(
-                CollectionsState.selected_collection_view_type == "time_series_cards",
+                CollectionsState.active_collection_view_type == "time_series_cards",
                 # Time Series Card Layout with column toggle
                 rx.el.div(
                     # Column toggle button

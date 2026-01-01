@@ -87,8 +87,9 @@ class CollectionsState(rx.State):
     # Selected collection
     selected_collection_id: str = ""
     
-    # Route parameter for collection pages (set by JavaScript)
-    route_collection_id: str = ""
+    # Legacy route storage (older JS-based approach). Kept for backwards compatibility.
+    # New routing reads params from `self.router._page.params` instead.
+    route_collection_id_legacy: str = ""
     
     # Collection UI state
     show_create_collection_modal: bool = False
@@ -133,40 +134,61 @@ class CollectionsState(rx.State):
         # Ensure collections are initialized
         self._initialize_default_collections()
         return self._collections
+
+    @rx.var
+    def route_collection_id_param(self) -> str:
+        """Get collection_id from the current route (/collections/[collection_id])."""
+        try:
+            return self.router._page.params.get("collection_id", "")  # type: ignore[attr-defined]
+        except Exception:
+            return ""
+
+    @rx.var
+    def active_collection_id(self) -> str:
+        """The currently active collection id (prefer route param, fallback to state)."""
+        return self.route_collection_id_param or self.selected_collection_id
     
     @rx.var
     def current_route_collection_id(self) -> str:
-        """Get collection_id from current route via JavaScript."""
-        # This will be set by JavaScript in the page component
-        return self.route_collection_id if hasattr(self, 'route_collection_id') else ''
+        """Get collection_id from current route (route params)."""
+        return self.route_collection_id_param
     
     @rx.var
-    def selected_collection(self) -> CollectionConfig | None:
-        """Get the currently selected collection."""
-        if not self.selected_collection_id:
+    def active_collection(self) -> CollectionConfig | None:
+        """Get the currently active collection (route-driven)."""
+        self._initialize_default_collections()
+        collection_id = self.active_collection_id
+        if not collection_id:
             return None
         for collection in self._collections:
-            if collection["id"] == self.selected_collection_id:
+            if collection["id"] == collection_id:
                 return collection
         return None
+
+    # Backwards-compatible aliases used throughout the UI.
+    @rx.var
+    def selected_collection(self) -> CollectionConfig | None:
+        """Alias for active_collection (route-driven)."""
+        return self.active_collection
     
     @rx.var
-    def selected_collection_view_type(self) -> str:
-        """Get the view type of the selected collection, defaulting to 'table'."""
-        if not self.selected_collection_id:
+    def active_collection_view_type(self) -> str:
+        """Get the view type of the active collection, defaulting to 'table'."""
+        collection = self.active_collection
+        if not collection:
             return "table"
-        for collection in self._collections:
-            if collection["id"] == self.selected_collection_id:
-                # Check if view_type exists in the dict
-                if "view_type" in collection:
-                    return collection["view_type"]
-                return "table"
-        return "table"
+        return collection.get("view_type", "table")
+
+    @rx.var
+    def selected_collection_view_type(self) -> str:
+        """Alias for active_collection_view_type (route-driven)."""
+        return self.active_collection_view_type
     
     @rx.var
     def selected_collection_entities(self) -> list[TimeSeries]:
         """Get entities for the selected collection, with search filter applied."""
-        if not self.selected_collection_id:
+        collection_id = self.active_collection_id
+        if not collection_id:
             return []
         
         # Get entities from EntitiesState - access the underlying dictionary directly
@@ -174,7 +196,7 @@ class CollectionsState(rx.State):
         # Access the private attribute directly to avoid Var chaining issues
         entities_dict = EntitiesState._time_series_entities
         # Use .get() which returns [] if key doesn't exist (lazy initialization)
-        items = entities_dict.get(self.selected_collection_id, [])
+        items = entities_dict.get(collection_id, [])
         
         # Apply search filter
         if self.collection_search_query:
@@ -294,6 +316,27 @@ class CollectionsState(rx.State):
         # This is handled in EntitiesState when entities are loaded
     
     @rx.event
+    def on_load_collection_page(self):
+        """Load handler for collection pages - extracts collection_id from route and sets state."""
+        # Clear other selections first
+        from app.states.entities import EntitiesState
+        from app.states.workspace import WorkspaceState
+        EntitiesState.selected_object_type = ""
+        EntitiesState.is_loading = False
+        WorkspaceState.selected_menu_item = ""
+        
+        # Initialize collections
+        self._initialize_default_collections()
+        
+        # Extract collection_id from route params
+        try:
+            collection_id = self.router._page.params.get("collection_id", "")  # type: ignore[attr-defined]
+            if collection_id:
+                self.selected_collection_id = collection_id
+        except Exception:
+            pass
+    
+    @rx.event
     def create_collection(self, form_data: dict):
         """Create a new collection."""
         import uuid
@@ -348,29 +391,17 @@ class CollectionsState(rx.State):
     @rx.event
     def select_collection(self, collection_id: str):
         """Select a collection and navigate to its page."""
-        # Set selection immediately for instant feedback
-        self.selected_collection_id = collection_id
-        
-        # Clear other selections
-        from app.states.entities import EntitiesState
+        # Route is the source of truth for what renders. Just navigate.
         from app.states.workspace import WorkspaceState
-        EntitiesState.selected_object_type = ""
-        WorkspaceState.selected_menu_item = ""
-        
-        # Navigate to the collection page
-        return rx.redirect(f"/collections/{collection_id}")
+        self.selected_collection_id = collection_id
+        return rx.redirect(f"{WorkspaceState.workspace_base_url}/collections/{collection_id}")
     
     @rx.event
     def load_collection_page(self, collection_id: str):
         """Load a collection page - sets the collection without redirecting."""
-        # Set selection immediately for instant feedback
+        # Keep state in sync when called from UI. Rendering is still route-driven.
         self.selected_collection_id = collection_id
-        
-        # Clear other selections
-        from app.states.entities import EntitiesState
-        from app.states.workspace import WorkspaceState
-        EntitiesState.selected_object_type = ""
-        WorkspaceState.selected_menu_item = ""
+        yield
     
     @rx.event
     def toggle_create_collection_modal(self):

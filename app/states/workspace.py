@@ -5,6 +5,10 @@ import reflex as rx
 class WorkspaceState(rx.State):
     """State management for workspace UI, navigation, and settings."""
     
+    # Workspace configuration
+    workspace_name: str = "rebase-energy"
+    workspace_slug: str = "rebase-energy"
+    
     # Sidebar state
     sidebar_collapsed: bool = False
     sidebar_width: int = 256  # Default 256px = w-64
@@ -46,11 +50,24 @@ class WorkspaceState(rx.State):
     }
     
     @rx.var
+    def workspace_base_url(self) -> str:
+        """Get the base URL for the workspace (e.g., '/rebase-energy')."""
+        return f"/{self.workspace_slug}"
+    
+    @rx.var
     def get_sidebar_width_px(self) -> str:
         """Get sidebar width as a string with 'px' suffix."""
         if self.sidebar_collapsed:
             return "64px"
         return f"{self.sidebar_width}px"
+    
+    @rx.var
+    def current_route(self) -> str:
+        """Get the current route path."""
+        try:
+            return self.router.url.path  # type: ignore[attr-defined]
+        except Exception:
+            return f"/{self.workspace_slug}"
     
     @rx.var
     def visible_menu_items(self) -> list[tuple[str, str]]:
@@ -145,7 +162,14 @@ class WorkspaceState(rx.State):
     def navigate_to_settings(self):
         """Navigate to settings page."""
         self.workspace_dropdown_open = False
-        return rx.redirect("/settings")
+        return rx.redirect(f"{self.workspace_base_url}/settings")
+    
+    @rx.event
+    def set_workspace_name(self, name: str):
+        """Set the workspace name."""
+        self.workspace_name = name
+        # Update slug (convert to lowercase, replace spaces with hyphens)
+        self.workspace_slug = name.lower().replace(" ", "-").replace("_", "-")
     
     @rx.event
     def select_settings_section(self, section: str):

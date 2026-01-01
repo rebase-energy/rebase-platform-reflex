@@ -246,7 +246,18 @@ def collections_sidebar() -> rx.Component:
                 rx.el.div(
                     rx.foreach(
                         WorkspaceState.visible_menu_items,
-                        lambda item: menu_item(item[0], item[1], WorkspaceState.select_menu_item(item[0])),
+                        lambda item: rx.link(
+                            rx.el.div(
+                                rx.icon(item[1], class_name="h-4 w-4 text-gray-400 mr-2"),
+                                rx.el.span(
+                                    item[0],
+                                    class_name="text-gray-300 text-sm font-medium flex-1 text-left",
+                                ),
+                                class_name="flex items-center",
+                            ),
+                            href=f"{WorkspaceState.workspace_base_url}/{item[0].lower()}",
+                            class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
+                        ),
                     ),
                     class_name="px-2 mb-4 space-y-0.5",
                 ),
@@ -272,43 +283,31 @@ def collections_sidebar() -> rx.Component:
                     toggle_handler=WorkspaceState.toggle_objects,
                     add_handler=CollectionsState.toggle_create_collection_modal,  # Placeholder
                     children=rx.el.div(
-                        rx.el.button(
+                        rx.link(
                             rx.icon("building", class_name="h-4 w-4 text-gray-400 mr-2"),
                             rx.el.span(
                                 "TimeSeries",
-                                class_name=rx.cond(
-                                    EntitiesState.selected_object_type == "TimeSeries",
-                                    "px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
-                                    "px-2 py-0.5 rounded text-xs font-mono bg-gray-800/40 text-gray-400",
-                                ),
+                                class_name="px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
                             ),
-                            on_click=EntitiesState.select_object_type("TimeSeries"),
+                            href=f"{WorkspaceState.workspace_base_url}/entities/timeseries",
                             class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
                         ),
-                        rx.el.button(
+                        rx.link(
                             rx.icon("zap", class_name="h-4 w-4 text-gray-400 mr-2"),
                             rx.el.span(
                                 "Sites",
-                                class_name=rx.cond(
-                                    EntitiesState.selected_object_type == "Sites",
-                                    "px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
-                                    "px-2 py-0.5 rounded text-xs font-mono bg-gray-800/40 text-gray-400",
-                                ),
+                                class_name="px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
                             ),
-                            on_click=EntitiesState.select_object_type("Sites"),
+                            href=f"{WorkspaceState.workspace_base_url}/entities/sites",
                             class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
                         ),
-                        rx.el.button(
+                        rx.link(
                             rx.icon("package", class_name="h-4 w-4 text-gray-400 mr-2"),
                             rx.el.span(
                                 "Assets",
-                                class_name=rx.cond(
-                                    EntitiesState.selected_object_type == "Assets",
-                                    "px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
-                                    "px-2 py-0.5 rounded text-xs font-mono bg-gray-800/40 text-gray-400",
-                                ),
+                                class_name="px-2 py-0.5 rounded text-xs font-mono bg-gray-700/50 text-gray-300",
                             ),
-                            on_click=EntitiesState.select_object_type("Assets"),
+                            href=f"{WorkspaceState.workspace_base_url}/entities/assets",
                             class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
                         ),
                         class_name="flex flex-col gap-2",
@@ -324,7 +323,7 @@ def collections_sidebar() -> rx.Component:
                     children=rx.el.div(
                         rx.foreach(
                             CollectionsState.collections,
-                            lambda lst: rx.el.button(
+                            lambda lst: rx.link(
                                 rx.el.div(
                                     rx.icon(
                                         "rocket",
@@ -336,12 +335,8 @@ def collections_sidebar() -> rx.Component:
                                     ),
                                     class_name="flex items-center",
                                 ),
-                                on_click=CollectionsState.select_collection(lst["id"]),
-                                class_name=rx.cond(
-                                    CollectionsState.selected_collection_id == lst["id"],
-                                    "w-full flex items-center px-3 py-2 bg-gray-800/50 hover:bg-gray-800/70 rounded-md text-left",
-                                    "w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left",
-                                ),
+                                href=f"{WorkspaceState.workspace_base_url}/collections/{lst['id']}",
+                                class_name="w-full flex items-center px-3 py-2 hover:bg-gray-800/30 rounded-md text-left transition-colors",
                             ),
                         ),
                     ),

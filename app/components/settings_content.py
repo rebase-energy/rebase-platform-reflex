@@ -60,7 +60,8 @@ def settings_general_content() -> rx.Component:
                         class_name="block text-sm font-medium text-gray-300 mb-2",
                     ),
                     rx.el.input(
-                        value="rebase-energy",
+                        value=WorkspaceState.workspace_name,
+                        on_change=WorkspaceState.set_workspace_name,
                         class_name="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-md text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
                     ),
                     class_name="mb-4",
@@ -71,8 +72,13 @@ def settings_general_content() -> rx.Component:
                         class_name="block text-sm font-medium text-gray-300 mb-2",
                     ),
                     rx.el.input(
-                        value="rebase",
-                        class_name="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-md text-white text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
+                        value=WorkspaceState.workspace_slug,
+                        disabled=True,
+                        class_name="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-md text-gray-500 text-sm cursor-not-allowed",
+                    ),
+                    rx.el.p(
+                        "Slug is automatically generated from the workspace name",
+                        class_name="text-gray-500 text-xs mt-1",
                     ),
                     class_name="mb-4",
                 ),
@@ -457,7 +463,7 @@ def settings_collections_content() -> rx.Component:
                                 rx.el.span("Default", class_name="mr-1.5"),
                                 rx.el.button(
                                     rx.icon(
-                                        "help-circle",
+                                        "circle_help",
                                         class_name="h-3.5 w-3.5 text-gray-500 hover:text-gray-400",
                                     ),
                                     title="The default collection will be showed when logging in.",
@@ -540,7 +546,7 @@ def settings_collections_content() -> rx.Component:
                             # Three dots menu
                             rx.el.td(
                                 rx.el.button(
-                                    rx.icon("more-vertical", class_name="h-4 w-4 text-gray-400 hover:text-white"),
+                                    rx.icon("menu", class_name="h-4 w-4 text-gray-400 hover:text-white"),
                                     class_name="hover:bg-gray-800 rounded-md p-1 transition-colors",
                                 ),
                                 class_name="px-4 py-3",
