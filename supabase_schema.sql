@@ -100,8 +100,8 @@ CREATE INDEX IF NOT EXISTS idx_collection_entities_collection ON collection_enti
 CREATE INDEX IF NOT EXISTS idx_collection_entities_entity ON collection_entities(entity_id);
 
 -- ============================================
--- Row Level Security (RLS) - DISABLED for single user
--- Since we're not using authentication, we disable RLS
+-- Row Level Security (RLS) - Allow all for service role
+-- Since we're using service role key, allow all operations
 -- ============================================
 
 -- Enable RLS on all tables
@@ -109,6 +109,12 @@ ALTER TABLE workspaces ENABLE ROW LEVEL SECURITY;
 ALTER TABLE entities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE collections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE collection_entities ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist (for clean re-runs)
+DROP POLICY IF EXISTS "Allow all operations on workspaces" ON workspaces;
+DROP POLICY IF EXISTS "Allow all operations on entities" ON entities;
+DROP POLICY IF EXISTS "Allow all operations on collections" ON collections;
+DROP POLICY IF EXISTS "Allow all operations on collection_entities" ON collection_entities;
 
 -- Create policies that allow all operations (since we're using service role key)
 CREATE POLICY "Allow all operations on workspaces" ON workspaces
@@ -122,6 +128,12 @@ CREATE POLICY "Allow all operations on collections" ON collections
 
 CREATE POLICY "Allow all operations on collection_entities" ON collection_entities
     FOR ALL USING (true) WITH CHECK (true);
+
+-- Also grant permissions to authenticated and anon roles (for API access)
+GRANT ALL ON workspaces TO authenticated, anon;
+GRANT ALL ON entities TO authenticated, anon;
+GRANT ALL ON collections TO authenticated, anon;
+GRANT ALL ON collection_entities TO authenticated, anon;
 
 -- ============================================
 -- Function to update updated_at timestamp
