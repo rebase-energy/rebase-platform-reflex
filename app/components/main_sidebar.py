@@ -12,8 +12,8 @@ def rebase_icon() -> rx.Component:
     """Rebase logo icon."""
     return rx.el.img(
         src=rx.cond(
-            WorkspaceState.workspace_logo_data_url != "",
-            WorkspaceState.workspace_logo_data_url,
+            WorkspaceState.workspace_logo_src != "",
+            WorkspaceState.workspace_logo_src,
             "/logo.png",
         ),
         alt="rebase-energy",

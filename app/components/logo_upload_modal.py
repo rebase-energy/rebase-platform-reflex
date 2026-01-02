@@ -29,7 +29,7 @@ def logo_upload_modal() -> rx.Component:
                         class_name="flex items-center justify-between mb-4",
                     ),
                     rx.el.p(
-                        "Drag and drop a PNG here, or click to choose a file.",
+                        "Drag and drop a PNG, JPG, or GIF here, or click to choose a file.",
                         class_name="text-gray-400 text-sm mb-4",
                     ),
                     # Drop zone (no file picker)
@@ -38,18 +38,22 @@ def logo_upload_modal() -> rx.Component:
                             rx.icon("upload", class_name="h-6 w-6 text-gray-400 mb-2"),
                             rx.el.div(
                                 rx.el.p(
-                                    "Drop your PNG logo here (or click to upload)",
+                                    "Drop your logo here (or click to upload)",
                                     class_name="text-gray-200 text-sm font-medium",
                                 ),
                                 rx.el.p(
-                                    "Max 10MB • PNG only",
+                                    "Max 10MB • PNG/JPG/GIF",
                                     class_name="text-gray-500 text-xs mt-1",
                                 ),
                                 class_name="text-center",
                             ),
                             class_name="w-full p-8 border-2 border-dashed border-gray-700 rounded-lg bg-gray-800/30 hover:bg-gray-800/40 transition-colors flex flex-col items-center justify-center cursor-pointer",
                         ),
-                        accept={"image/png": [".png"]},
+                        accept={
+                            "image/png": [".png"],
+                            "image/jpeg": [".jpg", ".jpeg"],
+                            "image/gif": [".gif"],
+                        },
                         max_files=1,
                         no_click=False,
                         no_keyboard=False,

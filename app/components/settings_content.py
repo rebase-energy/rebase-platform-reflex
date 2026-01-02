@@ -22,9 +22,9 @@ def settings_general_content() -> rx.Component:
                 rx.el.div(
                     rx.el.div(
                         rx.cond(
-                            WorkspaceState.workspace_logo_data_url != "",
+                            WorkspaceState.workspace_logo_src != "",
                             rx.el.img(
-                                src=WorkspaceState.workspace_logo_data_url,
+                                src=WorkspaceState.workspace_logo_src,
                                 alt="Workspace logo",
                                 class_name="w-full h-full object-cover",
                             ),

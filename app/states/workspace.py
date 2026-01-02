@@ -15,9 +15,11 @@ class WorkspaceState(rx.State):
     default_collection_id: str = ""  # Collection to show on login/start
 
     # Workspace branding
+    workspace_logo_url: str = ""  # Public URL to Supabase Storage object
     workspace_logo_data_url: str = ""  # data:image/png;base64,...
     show_logo_upload_modal: bool = False
     _db_supports_logo_data_url: bool = False
+    _db_supports_logo_url: bool = False
     
     # Sidebar state
     sidebar_collapsed: bool = False
@@ -109,6 +111,15 @@ class WorkspaceState(rx.State):
     def workspace_base_url(self) -> str:
         """Get the base URL for the workspace (e.g., '/rebase-energy')."""
         return f"/{self.workspace_slug}"
+
+    @rx.var
+    def workspace_logo_src(self) -> str:
+        """Get the logo src URL for rendering (Storage URL preferred, then legacy data URL)."""
+        if self.workspace_logo_url:
+            return self.workspace_logo_url
+        if self.workspace_logo_data_url:
+            return self.workspace_logo_data_url
+        return ""
     
     @rx.var
     def get_sidebar_width_px(self) -> str:
@@ -283,6 +294,9 @@ class WorkspaceState(rx.State):
                 self.sidebar_width = workspace.get("sidebar_width", self.sidebar_width)
                 self.default_collection_id = workspace.get("default_collection_id", "") or ""
                 self._db_supports_logo_data_url = "logo_data_url" in workspace
+                self._db_supports_logo_url = "logo_url" in workspace
+                if self._db_supports_logo_url:
+                    self.workspace_logo_url = workspace.get("logo_url", "") or ""
                 if self._db_supports_logo_data_url:
                     self.workspace_logo_data_url = workspace.get("logo_data_url", "") or ""
                 
@@ -318,6 +332,9 @@ class WorkspaceState(rx.State):
             if result:
                 self.workspace_id = result.get("id", "")
                 self._db_supports_logo_data_url = "logo_data_url" in result
+                self._db_supports_logo_url = "logo_url" in result
+                if self._db_supports_logo_url:
+                    self.workspace_logo_url = result.get("logo_url", "") or ""
                 if self._db_supports_logo_data_url:
                     self.workspace_logo_data_url = result.get("logo_data_url", "") or ""
         except Exception as e:
@@ -341,6 +358,8 @@ class WorkspaceState(rx.State):
                 "default_collection_id": self.default_collection_id or None,
                 "menu_item_visibility": self.menu_item_visibility,
             }
+            if self._db_supports_logo_url:
+                data["logo_url"] = self.workspace_logo_url or None
             if self._db_supports_logo_data_url:
                 data["logo_data_url"] = self.workspace_logo_data_url or None
             SupabaseService.update_workspace(self.workspace_id, data)
@@ -366,13 +385,29 @@ class WorkspaceState(rx.State):
     @rx.event
     def clear_workspace_logo(self):
         """Clear the current workspace logo."""
+        # Best effort: also remove stored object (if we have a URL)
+        try:
+            if self.workspace_logo_url:
+                from app.services.supabase_client import get_supabase_client
+                client = get_supabase_client()
+                if client is not None:
+                    bucket = "workspace-logos"
+                    # If this is a public URL of the form .../storage/v1/object/public/<bucket>/<path>
+                    marker = f"/storage/v1/object/public/{bucket}/"
+                    if marker in self.workspace_logo_url:
+                        path = self.workspace_logo_url.split(marker, 1)[1]
+                        client.storage.from_(bucket).remove([path])
+        except Exception:
+            pass
+
+        self.workspace_logo_url = ""
         self.workspace_logo_data_url = ""
         self._save_workspace_to_db()
         return rx.toast.success("Workspace logo removed.")
 
     @rx.event
     async def handle_workspace_logo_upload(self, files: list[rx.UploadFile]):
-        """Handle PNG logo uploads from the drag-and-drop zone."""
+        """Handle logo uploads from the drag-and-drop zone and persist to Supabase Storage."""
         if not files:
             return rx.toast.error("No file received.")
 
@@ -384,15 +419,71 @@ class WorkspaceState(rx.State):
         if len(data) > 10 * 1024 * 1024:
             return rx.toast.error("Logo must be under 10MB.")
 
-        # Enforce PNG (UI also restricts to PNG via accept=...)
-        if content_type not in ("image/png", "") and not filename.endswith(".png"):
-            return rx.toast.error("Please upload a PNG file.")
-        if not filename.endswith(".png") and content_type != "image/png":
-            return rx.toast.error("Please upload a PNG file.")
+        # Enforce supported formats
+        allowed_types = {
+            "image/png": ".png",
+            "image/jpeg": ".jpg",
+            "image/gif": ".gif",
+        }
+        ext = None
+        if content_type in allowed_types:
+            ext = allowed_types[content_type]
+        elif filename.endswith(".png"):
+            ext = ".png"
+            content_type = "image/png"
+        elif filename.endswith(".jpg") or filename.endswith(".jpeg"):
+            ext = ".jpg"
+            content_type = "image/jpeg"
+        elif filename.endswith(".gif"):
+            ext = ".gif"
+            content_type = "image/gif"
+        else:
+            return rx.toast.error("Please upload a PNG, JPG, or GIF file.")
 
-        b64 = base64.b64encode(data).decode("utf-8")
-        self.workspace_logo_data_url = f"data:image/png;base64,{b64}"
-        self.show_logo_upload_modal = False
-        self._save_workspace_to_db()
-        return rx.toast.success("Workspace logo updated.")
+        # Prefer Supabase Storage URL method (logo_url)
+        try:
+            from app.services.supabase_client import get_supabase_client, get_supabase_url
+            client = get_supabase_client()
+            supabase_url = get_supabase_url()
+            if client is None or not supabase_url:
+                return rx.toast.error("Supabase is not configured. Set SUPABASE_URL and SUPABASE_KEY.")
+
+            # Ensure we have a workspace_id (should be loaded via on_load)
+            if not self.workspace_id:
+                self.load_workspace_from_db()
+            if not self.workspace_id:
+                return rx.toast.error("Workspace not loaded yet. Please refresh and try again.")
+
+            bucket = "workspace-logos"
+            path = f"workspaces/{self.workspace_id}/logo{ext}"
+
+            # Upload (overwrite existing)
+            client.storage.from_(bucket).upload(
+                path,
+                data,
+                file_options={
+                    "content-type": content_type,
+                    "upsert": "true",
+                },
+            )
+
+            public_url = f"{supabase_url}/storage/v1/object/public/{bucket}/{path}"
+            self.workspace_logo_url = public_url
+            # Clear legacy data url to avoid bloat
+            self.workspace_logo_data_url = ""
+            self.show_logo_upload_modal = False
+            self._save_workspace_to_db()
+            return rx.toast.success("Workspace logo updated.")
+        except Exception as e:
+            # Fallback to legacy data URL if Storage upload fails
+            try:
+                b64 = base64.b64encode(data).decode("utf-8")
+                mime = content_type or "image/png"
+                self.workspace_logo_data_url = f"data:{mime};base64,{b64}"
+                self.workspace_logo_url = ""
+                self.show_logo_upload_modal = False
+                self._save_workspace_to_db()
+                return rx.toast.warning(f"Stored logo in DB (Storage upload failed): {e}")
+            except Exception:
+                return rx.toast.error(f"Failed to upload workspace logo: {e}")
 
