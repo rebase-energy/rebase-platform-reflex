@@ -2,3 +2,5 @@ reflex==0.8.24.post1
 supabase==2.10.0
 python-dotenv>=1.0.0
 reflex-echarts>=0.1.0
+psycopg>=3.3.2
+psycopg-binary>=3.3.2
