@@ -8,6 +8,14 @@ assets/external/
 __pycache__/
 /app/__pycache__/
 
+# Local virtualenvs / Python installs (should never be committed)
+.venv/
+venv/
+env/
+python3.12/
+python3.13/
+python3.14/
+
 # Environment variables (contains secrets)
 .env
 .env.local
