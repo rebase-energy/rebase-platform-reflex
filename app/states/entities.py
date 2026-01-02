@@ -252,8 +252,8 @@ class EntitiesState(rx.State):
         
         # If nothing loaded, initialize with defaults
         if not self._time_series_entities:
-            # Initialize empty storage for default collections
-            self._time_series_entities["default-timeseries"] = []
+        # Initialize empty storage for default collections
+        self._time_series_entities["default-timeseries"] = []
             
             # Create TimeSeries entities for esett-data collection (4 cards = 4 time series)
             esett_entities = [
