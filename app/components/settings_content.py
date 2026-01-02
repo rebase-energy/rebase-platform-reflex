@@ -168,8 +168,8 @@ def settings_appearance_content() -> rx.Component:
             class_name="text-gray-400 text-sm mb-6",
         ),
         rx.el.div(
-            # Theme section
-            rx.el.div(
+        # Theme section
+        rx.el.div(
             rx.el.h3(
                 "Theme",
                 class_name="text-white font-medium mb-1",
@@ -547,7 +547,7 @@ def settings_collections_content() -> rx.Component:
                                 class_name="flex items-center",
                             ),
                             class_name="text-left text-sm font-medium text-gray-400 px-4 py-2",
-                        ),
+            ),
                         rx.el.th("", class_name="text-left text-sm font-medium text-gray-400 px-4 py-2 w-12"),
                         class_name="border-b border-gray-800",
                     ),

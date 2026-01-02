@@ -1,7 +1,8 @@
 import reflex as rx
 from app.pages.generic_page import generic_page
-from app.pages.demo_table_view import demo_table_view_page
-from app.pages.demo_timeseries_view import demo_timeseries_view_page
+# Demo pages disabled in production
+# from app.pages.demo_table_view import demo_table_view_page
+# from app.pages.demo_timeseries_view import demo_timeseries_view_page
 from app.pages.settings_page import (
     settings_page,
     settings_general_page,
@@ -106,6 +107,8 @@ app.add_page(settings_appearance_page, route=f"/{WORKSPACE_SLUG}/settings/appear
 app.add_page(settings_entities_page, route=f"/{WORKSPACE_SLUG}/settings/entities", on_load=[WorkspaceState.load_workspace_from_db, CollectionsState.on_load])
 app.add_page(settings_collections_page, route=f"/{WORKSPACE_SLUG}/settings/collections", on_load=[WorkspaceState.load_workspace_from_db, CollectionsState.on_load])
 
-# Demo pages - standalone component demos
-app.add_page(demo_table_view_page, route="/demo/table-view", title="Table View Demo")
-app.add_page(demo_timeseries_view_page, route="/demo/timeseries-view", title="Time Series View Demo")
+# Demo pages - standalone component demos (disabled in production due to prerendering issues)
+# These cause 500 errors during production builds because they access state during SSR
+# Uncomment for local development:
+# app.add_page(demo_table_view_page, route="/demo/table-view", title="Table View Demo")
+# app.add_page(demo_timeseries_view_page, route="/demo/timeseries-view", title="Time Series View Demo")

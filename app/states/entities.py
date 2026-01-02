@@ -538,9 +538,9 @@ class EntitiesState(rx.State):
                 unit = form_data.get("unit", "kW").strip()
                 new_entity: TimeSeries = {
                     "id": entity_id,
-                    "name": name,
-                    "description": description,
-                    "unit": unit,
+                "name": name,
+                "description": description,
+                "unit": unit,
                     "site_name": "",
                     "timestamp": datetime.now().isoformat(),
                     "value": 0.0,
@@ -578,8 +578,8 @@ class EntitiesState(rx.State):
                 site_name = form_data.get("site_name", "").strip()
                 new_asset: Asset = {
                     "id": entity_id,
-                    "name": name,
-                    "description": description,
+                "name": name,
+                "description": description,
                     "asset_type": asset_type,
                     "site_id": "",
                     "site_name": site_name,
