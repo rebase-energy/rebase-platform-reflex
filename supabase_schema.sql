@@ -129,11 +129,16 @@ CREATE POLICY "Allow all operations on collections" ON collections
 CREATE POLICY "Allow all operations on collection_entities" ON collection_entities
     FOR ALL USING (true) WITH CHECK (true);
 
--- Also grant permissions to authenticated and anon roles (for API access)
-GRANT ALL ON workspaces TO authenticated, anon;
-GRANT ALL ON entities TO authenticated, anon;
-GRANT ALL ON collections TO authenticated, anon;
-GRANT ALL ON collection_entities TO authenticated, anon;
+-- Grant permissions to all roles (service_role, authenticated, anon)
+GRANT ALL ON workspaces TO service_role, authenticated, anon;
+GRANT ALL ON entities TO service_role, authenticated, anon;
+GRANT ALL ON collections TO service_role, authenticated, anon;
+GRANT ALL ON collection_entities TO service_role, authenticated, anon;
+
+-- Also grant usage on schema
+GRANT USAGE ON SCHEMA public TO service_role, authenticated, anon;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role, authenticated, anon;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role, authenticated, anon;
 
 -- ============================================
 -- Function to update updated_at timestamp
