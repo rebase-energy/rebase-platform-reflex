@@ -2,6 +2,7 @@ import reflex as rx
 from app.states.workspace import WorkspaceState
 from app.states.collections import CollectionsState
 from app.states.entities import EntitiesState
+from app.components.logo_upload_modal import logo_upload_modal
 
 
 def settings_general_content() -> rx.Component:
@@ -20,11 +21,19 @@ def settings_general_content() -> rx.Component:
             rx.el.div(
                 rx.el.div(
                     rx.el.div(
-                        rx.el.span(
-                            "R",
-                            class_name="text-white text-2xl font-bold",
+                        rx.cond(
+                            WorkspaceState.workspace_logo_data_url != "",
+                            rx.el.img(
+                                src=WorkspaceState.workspace_logo_data_url,
+                                alt="Workspace logo",
+                                class_name="w-full h-full object-cover",
+                            ),
+                            rx.el.span(
+                                "R",
+                                class_name="text-white text-2xl font-bold",
+                            ),
                         ),
-                        class_name="w-16 h-16 bg-green-500 rounded-lg flex items-center justify-center",
+                        class_name="w-16 h-16 bg-green-500 rounded-lg flex items-center justify-center overflow-hidden",
                     ),
                     rx.el.div(
                         rx.el.h3(
@@ -43,10 +52,12 @@ def settings_general_content() -> rx.Component:
                     rx.el.button(
                         rx.icon("camera", class_name="h-4 w-4 mr-2"),
                         "Upload new logo",
+                        on_click=WorkspaceState.toggle_logo_upload_modal,
                         class_name="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors",
                     ),
                     rx.el.button(
                         rx.icon("trash-2", class_name="h-4 w-4 text-red-400"),
+                        on_click=WorkspaceState.clear_workspace_logo,
                         class_name="ml-2 p-2 hover:bg-gray-800 rounded-md transition-colors",
                     ),
                     class_name="flex items-center",
@@ -128,6 +139,7 @@ def settings_general_content() -> rx.Component:
             ),
             class_name="p-6 space-y-6",
         ),
+        logo_upload_modal(),
     )
 
 

@@ -1,4 +1,5 @@
 import reflex as rx
+import base64
 
 
 # Workspace State Management
@@ -12,6 +13,11 @@ class WorkspaceState(rx.State):
     workspace_name: str = "rebase-energy"
     workspace_slug: str = "rebase-energy"
     default_collection_id: str = ""  # Collection to show on login/start
+
+    # Workspace branding
+    workspace_logo_data_url: str = ""  # data:image/png;base64,...
+    show_logo_upload_modal: bool = False
+    _db_supports_logo_data_url: bool = False
     
     # Sidebar state
     sidebar_collapsed: bool = False
@@ -276,6 +282,9 @@ class WorkspaceState(rx.State):
                 self.sidebar_collapsed = workspace.get("sidebar_collapsed", self.sidebar_collapsed)
                 self.sidebar_width = workspace.get("sidebar_width", self.sidebar_width)
                 self.default_collection_id = workspace.get("default_collection_id", "") or ""
+                self._db_supports_logo_data_url = "logo_data_url" in workspace
+                if self._db_supports_logo_data_url:
+                    self.workspace_logo_data_url = workspace.get("logo_data_url", "") or ""
                 
                 # Load menu item visibility if present
                 menu_visibility = workspace.get("menu_item_visibility")
@@ -308,6 +317,9 @@ class WorkspaceState(rx.State):
             result = SupabaseService.create_workspace(data)
             if result:
                 self.workspace_id = result.get("id", "")
+                self._db_supports_logo_data_url = "logo_data_url" in result
+                if self._db_supports_logo_data_url:
+                    self.workspace_logo_data_url = result.get("logo_data_url", "") or ""
         except Exception as e:
             print(f"Failed to create workspace in database: {e}")
     
@@ -329,6 +341,8 @@ class WorkspaceState(rx.State):
                 "default_collection_id": self.default_collection_id or None,
                 "menu_item_visibility": self.menu_item_visibility,
             }
+            if self._db_supports_logo_data_url:
+                data["logo_data_url"] = self.workspace_logo_data_url or None
             SupabaseService.update_workspace(self.workspace_id, data)
         except Exception as e:
             print(f"Failed to save workspace to database: {e}")
@@ -338,4 +352,47 @@ class WorkspaceState(rx.State):
         """Set the default collection for the workspace."""
         self.default_collection_id = collection_id
         self._save_workspace_to_db()
+
+    @rx.event
+    def toggle_logo_upload_modal(self):
+        """Toggle the workspace logo upload modal."""
+        self.show_logo_upload_modal = not self.show_logo_upload_modal
+
+    @rx.event
+    def close_logo_upload_modal(self):
+        """Close the workspace logo upload modal."""
+        self.show_logo_upload_modal = False
+
+    @rx.event
+    def clear_workspace_logo(self):
+        """Clear the current workspace logo."""
+        self.workspace_logo_data_url = ""
+        self._save_workspace_to_db()
+        return rx.toast.success("Workspace logo removed.")
+
+    @rx.event
+    async def handle_workspace_logo_upload(self, files: list[rx.UploadFile]):
+        """Handle PNG logo uploads from the drag-and-drop zone."""
+        if not files:
+            return rx.toast.error("No file received.")
+
+        file = files[0]
+        filename = (getattr(file, "filename", "") or "").lower()
+        content_type = getattr(file, "content_type", "") or ""
+
+        data = await file.read()
+        if len(data) > 10 * 1024 * 1024:
+            return rx.toast.error("Logo must be under 10MB.")
+
+        # Enforce PNG (UI also restricts to PNG via accept=...)
+        if content_type not in ("image/png", "") and not filename.endswith(".png"):
+            return rx.toast.error("Please upload a PNG file.")
+        if not filename.endswith(".png") and content_type != "image/png":
+            return rx.toast.error("Please upload a PNG file.")
+
+        b64 = base64.b64encode(data).decode("utf-8")
+        self.workspace_logo_data_url = f"data:image/png;base64,{b64}"
+        self.show_logo_upload_modal = False
+        self._save_workspace_to_db()
+        return rx.toast.success("Workspace logo updated.")
 

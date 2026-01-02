@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS workspaces (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     slug TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
+    logo_data_url TEXT DEFAULT NULL,
     theme TEXT DEFAULT 'Dark',
     accent_color TEXT DEFAULT '#10b981',
     sidebar_collapsed BOOLEAN DEFAULT FALSE,
@@ -37,6 +38,15 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                    WHERE table_name='workspaces' AND column_name='default_collection_id') THEN
         ALTER TABLE workspaces ADD COLUMN default_collection_id TEXT DEFAULT NULL;
+    END IF;
+END $$;
+
+-- Add logo_data_url column if it doesn't exist (for existing tables)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='workspaces' AND column_name='logo_data_url') THEN
+        ALTER TABLE workspaces ADD COLUMN logo_data_url TEXT DEFAULT NULL;
     END IF;
 END $$;
 
